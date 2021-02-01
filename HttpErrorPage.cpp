@@ -8,7 +8,7 @@ HttpErrorPage::HttpErrorPage(const std::string& code, const std::string& descrip
 					 <head>\n\
 					 \t<meta charset=\"UTF-8\">\n\
 					 \t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n\
-					 \t<title>Error page</title>\n\
+					 \t<title>%@@@%</title>\n\
 					 \n\
 					 \t<style>\n\
 					 \t\t* {\n\
@@ -45,11 +45,12 @@ HttpErrorPage::HttpErrorPage(const std::string& code, const std::string& descrip
 					 \t<div class=\"plainText\">webserv</div>\n\
 					 </body>\n\
 					 </html>";
-
-		this->_content.replace(this->_content.find("%***%"),
-			std::string("%***%").size(), this->_code);
-		this->_content.replace(this->_content.find("%&&&%"),
-			std::string("%&&&%").size(), this->_description);
+	this->_content.replace(this->_content.find("%@@@%"),
+		std::string("%@@@%").size(), this->_code + " error");
+	this->_content.replace(this->_content.find("%***%"),
+		std::string("%***%").size(), this->_code);
+	this->_content.replace(this->_content.find("%&&&%"),
+		std::string("%&&&%").size(), this->_description);
 }
 
 HttpErrorPage::~HttpErrorPage()
