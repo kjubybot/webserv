@@ -58,9 +58,9 @@ HttpErrorPage::~HttpErrorPage()
 std::string HttpErrorPage::createPage()
 {
 	std::string filename = "Page" + this->_code + ".html";
-	this->_fd = open(filename.c_str(), O_WRONLY | O_CREAT,
+	int fd = open(filename.c_str(), O_WRONLY | O_CREAT,
 		S_IRWXU | S_IRGRP | S_IROTH);
-	write(this->_fd, this->_content.c_str(), this->_content.size());
-	close(this->_fd);
+	write(fd, this->_content.c_str(), this->_content.size());
+	close(fd);
 	return (filename);
 }

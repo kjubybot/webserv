@@ -11,7 +11,6 @@ private :
 	std::string _code;
 	std::string	_description;
 	std::string _content;
-	int 		_fd;
 
 	HttpErrorPage();
 	HttpErrorPage(const HttpErrorPage& page);
