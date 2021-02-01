@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include "Connection.hpp"
 
-Connection::Connection(int sock) : sock(sock) {}
+Connection::Connection(int sock) : sock(sock), _isOpen(true) {}
 
 Connection::~Connection() {
     close(sock);
@@ -13,12 +13,12 @@ int Connection::getSocket() const {
 }
 
 void Connection::readData() {
-    char *buf = (char *)malloc(4096);
+    char buf[4096];
     int r = read(sock, buf, 4096);
     if (r > 0)
         data.append(buf, r);
     else
-        close(sock);
+        _isOpen = false;
 }
 
 void Connection::writeData() {
@@ -26,4 +26,8 @@ void Connection::writeData() {
         write(sock, data.data(), data.length());
         data.clear();
     }
+}
+
+bool Connection::isOpen() const {
+    return _isOpen;
 }

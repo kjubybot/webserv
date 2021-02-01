@@ -43,13 +43,21 @@ void Server::startServer() {
         FD_SET(listenSock, &rfds);
 
         for (std::list<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it) {
-            FD_SET((*it)->getSocket(), &rfds);
-            FD_SET((*it)->getSocket(), &wfds);
+            if ((*it)->isOpen()) {
+                FD_SET((*it)->getSocket(), &rfds);
+                FD_SET((*it)->getSocket(), &wfds);
+            } else {
+                delete *it;
+                connections.erase(it);
+            }
         }
         if (select(100, &rfds, &wfds, 0, 0) > 0) {
             if (FD_ISSET(listenSock, &rfds)) {
                 int newSock = accept(listenSock, 0, 0);
-                connections.push_back(new Connection(newSock));
+                if (newSock < 0)
+                    std::cerr << "Unable too create connection: " << strerror(errno) << std::endl;
+                else
+                    connections.push_back(new Connection(newSock));
             }
             for (std::list<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it) {
                 if (FD_ISSET((*it)->getSocket(), &rfds))

@@ -6,6 +6,7 @@
 class Connection {
     int sock;
     std::string data;
+    bool _isOpen;
 
     Connection();
     Connection(const Connection &);
@@ -17,6 +18,7 @@ public:
     int getSocket() const;
     void readData();
     void writeData();
+    bool isOpen() const;
 };
 
 
