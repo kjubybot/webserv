@@ -4,9 +4,13 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <string>
+#include <vector>
 
 #define BUFF_SIZE 4096
 
 int get_next_line(int fd, std::string& line);
+std::string trim(const std::string& s);
+std::vector<std::string> split(const std::string& str, const std::string& delimeter);
+std::string iptoa(uint32_t addr);
 
 #endif

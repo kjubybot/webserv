@@ -1,14 +1,18 @@
 NAME = webserv
-SRC = \
+SRC = $(addprefix srcs/,\
 	main.cpp\
 	Server.cpp\
+	Host.cpp\
 	Connection.cpp\
-	gnl.cpp
+	Request.cpp\
+	HttpErrorPage.cpp\
+	HttpErrorException.cpp\
+	util.cpp)
 
 OBJ = $(SRC:.cpp=.o)
 
 CXX = clang++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -Iincludes/
 
 all: $(NAME)
 
