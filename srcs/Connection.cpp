@@ -2,6 +2,8 @@
 #include <iostream>
 #include <unistd.h>
 #include "Connection.hpp"
+#include "HttpErrorException.hpp"
+#include "HttpErrorPage.hpp"
 #include "util.hpp"
 
 Connection::Connection(int sock, struct sockaddr_in sockAddr) : sock(sock), sockAddr(sockAddr), _isOpen(true) {
@@ -19,9 +21,16 @@ int Connection::getSocket() const {
 void Connection::readData() {
     char buf[4096];
     int r = read(sock, buf, 4096);
-    if (r > 0)
+    if (r > 0) {
         data.append(buf, r);
-    else
+        try {
+            request.parse(data);
+        } catch (HttpErrorException& ex) {
+            std::cout << "EXC" << std::endl;
+            data = HttpErrorPage(ex.getCode(), ex.getDescription()).createPage();
+            _isOpen = false;
+        }
+    } else
         _isOpen = false;
 }
 

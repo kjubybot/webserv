@@ -31,7 +31,7 @@ bool Server::parseConfig(const std::string &filename) {
         if (line == "ServerStart") {
             try {
                 hosts.push_back(parseHost(fd));
-            } catch (std::string& err) {
+            } catch (const char* err) {
                 std::cerr << "Unable to parse config: " << err << std::endl;
                 return false;
             }

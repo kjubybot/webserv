@@ -4,6 +4,9 @@ SRC = $(addprefix srcs/,\
 	Server.cpp\
 	Host.cpp\
 	Connection.cpp\
+	Request.cpp\
+	HttpErrorPage.cpp\
+	HttpErrorException.cpp\
 	util.cpp)
 
 OBJ = $(SRC:.cpp=.o)

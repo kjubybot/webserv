@@ -46,13 +46,11 @@ void Request::parse(std::string const &line) {
 			addElemInMap(key, value);
 		}
 		else if (colon != std::string::npos) {
-			// exception! - "400" "Bad request"
-			// HttpErrorException::HttpErrorException("400", "Bad request");
-			// host:             google.com
+			throw HttpErrorException("400", "Bad request");
 		}
 	}
 	else {
-		// exception! - HttpErrorException::HttpErrorException("400", "Bad request");
+		throw HttpErrorException("400", "Bad request");
 	}
 }
 
@@ -70,26 +68,12 @@ void	Request::parseFirstLine(std::string const &line) {
 	std::vector<std::string> arr = split(line, " ");
 	firstLine = true;
 	if (arr.size() == 3) {
-		if ((arr[0] != "GET") || (arr[0] != "POST") || (arr[0] != "PUT") || (arr[0] != "OPTION") || arr[2] != "HTTP/1.1")
-			return ; // exception - don`t have normal method or HttpErrorException::HttpErrorException("400", "Bad request");
+		if ((arr[0] != "GET") and (arr[0] != "POST") and (arr[0] != "PUT") and (arr[0] != "HEAD") and arr[2] != "HTTP/1.1")
+			throw HttpErrorException("400", "Bad request");
 		Request::setMethod(arr[0]);
 		Request::setPath(arr[1]);
 	}
 	else {
-		// exception - bad counts of arguments;
+        throw HttpErrorException("400", "Bad request");
 	}
 }
-
-std::string trim(const std::string& s) {
-	size_t pos, len;
-	pos = 0;
-	while (pos < s.length() && (s[pos] == '\n' || (s[pos] >= 9 && s[pos] <= 13)))
-		++pos;
-	if (pos == s.length())
-		return std::string();
-	len = pos + 1;
-	while (len < s.length() && (s[len] != '\n' && !(s[len] >= 9 && s[len] <= 13)))
-		++len;
-	return s.substr(pos, len);
-}
-

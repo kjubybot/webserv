@@ -1,9 +1,12 @@
 #ifndef REQUEST_HPP
 #define REQUEST_HPP
+
 #include <iostream>
 #include <map>
 #include <vector>
 #include <string>
+#include "HttpErrorException.hpp"
+#include "util.hpp"
 
 class Request {
 private:
@@ -13,8 +16,6 @@ private:
 	std::string htmlPage;
 	std::map<std::string, std::string> headers;
 
-	std::vector<std::string> split(const std::string& str, const std::string& delimeter);
-	std::string trim(const std::string& s);
 	void parseFirstLine(std::string const &arr);
 	void addElemInMap(std::string &key, std::string &value);
 

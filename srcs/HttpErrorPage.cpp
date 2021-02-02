@@ -63,5 +63,5 @@ std::string HttpErrorPage::createPage()
 		S_IRWXU | S_IRGRP | S_IROTH);
 	write(fd, this->_content.c_str(), this->_content.size());
 	close(fd);
-	return (filename);
+	return (_content);
 }
