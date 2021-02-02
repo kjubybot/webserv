@@ -2,9 +2,7 @@
 
 // Public methods
 
-Request::Request() : firstLine(false) {
-
-}
+Request::Request() : firstLine(false) {}
 
 void Request::setPath(const std::string &path) {
 	Request::path = path;
@@ -30,6 +28,11 @@ const std::string &Request::getMethod() const {
 	return method;
 }
 
+const std::map<std::string, std::string> &Request::getHeaders() const
+{
+	return headers;
+}
+
 void Request::parse(std::string const &line) {
 
 	if (!firstLine) {
@@ -37,55 +40,57 @@ void Request::parse(std::string const &line) {
 	}
 	else if (firstLine) {
 		int colon = line.find(':');
-		if ((colon != std::string::npos) && (line.find(' ', colon) == std::string::npos)) {
-			// need check space before ':' - and and
-			addElemInMap(std::string(&line[0], 5), std::string(&line[colon + 1]));
+		if ((colon != std::string::npos) && line[0] != ' ' && line[colon - 1] != ' ') {
+			std::string key = std::string(line, colon);
+			std::string value = std::string(trim(&line[colon + 1]));
+			addElemInMap(key, value);
 		}
-		else {
+		else if (colon != std::string::npos) {
 			// exception! - "400" "Bad request"
+			// HttpErrorException::HttpErrorException("400", "Bad request");
+			// host:             google.com
 		}
-
-
-
-
 	}
-//	else if (arr.size() == 2 || arr.size() == 3) {
-		// split - return vector string
-//		if (arr[0][arr[0].length() - 1] == ':' && arr[1][0] == ':') {
-//			 exception! - "400" "Bad request"
-//		}
-//		addElemInMap(arr[0], arr.size() == 2 ? arr[1] : arr[2]);
-//	}
 	else {
-		// exception! - "400" "Bad request"
+		// exception! - HttpErrorException::HttpErrorException("400", "Bad request");
 	}
-}
-
-void Request::addElemInMap(std::string &key, std::string &value) {
-	headers.insert(std::pair<std::string, std::string>(key, value));
 }
 
 Request::~Request() {
 	headers.clear();
 }
 
-// Host: :   google.com
-// asd asd asd asdas asdasd
-
 // Private methods
+
+void Request::addElemInMap(std::string &key, std::string &value) {
+	headers.insert(std::pair<std::string, std::string>(key, value));
+}
 
 void	Request::parseFirstLine(std::string const &line) {
 	std::vector<std::string> arr = split(line, " ");
 	firstLine = true;
 	if (arr.size() == 3) {
 		if ((arr[0] != "GET") || (arr[0] != "POST") || (arr[0] != "PUT") || (arr[0] != "OPTION") || arr[2] != "HTTP/1.1")
-			return ; // exception - don`t have normal method or ;
+			return ; // exception - don`t have normal method or HttpErrorException::HttpErrorException("400", "Bad request");
 		Request::setMethod(arr[0]);
 		Request::setPath(arr[1]);
 	}
 	else {
 		// exception - bad counts of arguments;
 	}
+}
+
+std::string trim(const std::string& s) {
+	size_t pos, len;
+	pos = 0;
+	while (pos < s.length() && (s[pos] == '\n' || (s[pos] >= 9 && s[pos] <= 13)))
+		++pos;
+	if (pos == s.length())
+		return std::string();
+	len = pos + 1;
+	while (len < s.length() && (s[len] != '\n' && !(s[len] >= 9 && s[len] <= 13)))
+		++len;
+	return s.substr(pos, len);
 }
 
 std::vector<std::string> split(const std::string& str, const std::string& delimeter) {
