@@ -127,6 +127,8 @@ bool Server::makeSockets() {
 }
 
 void Server::startServer() {
+    struct sockaddr_in sockAddr;
+    socklen_t sockLen;
     fd_set rfds, wfds;
 
     if (!makeSockets())
@@ -150,11 +152,11 @@ void Server::startServer() {
         if (select(100, &rfds, &wfds, 0, 0) > 0) {
             for (std::list<int>::iterator it = sockets.begin(); it != sockets.end(); ++it) {
                 if (FD_ISSET(*it, &rfds)) {
-                    int newSock = accept(*it, 0, 0);
+                    int newSock = accept(*it, (struct sockaddr *) &sockAddr, &sockLen);
                     if (newSock < 0)
                         std::cerr << "Unable too create connection: " << strerror(errno) << std::endl;
                     else
-                        connections.push_back(new Connection(newSock));
+                        connections.push_back(new Connection(newSock, sockAddr));
                 }
             }
             for (std::list<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it) {

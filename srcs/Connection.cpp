@@ -1,8 +1,12 @@
 #include <cstdlib>
+#include <iostream>
 #include <unistd.h>
-#include "../includes/Connection.hpp"
+#include "Connection.hpp"
+#include "util.hpp"
 
-Connection::Connection(int sock) : sock(sock), _isOpen(true) {}
+Connection::Connection(int sock, struct sockaddr_in sockAddr) : sock(sock), sockAddr(sockAddr), _isOpen(true) {
+    std::cout << iptoa(sockAddr.sin_addr.s_addr) << std::endl;
+}
 
 Connection::~Connection() {
     close(sock);

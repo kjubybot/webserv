@@ -48,3 +48,15 @@ std::vector<std::string> split(const std::string& str, const std::string& delime
         items.push_back(str.substr(prev, pos - prev));
     return (items);
 }
+
+std::string iptoa(uint32_t addr) {
+    std::string ret;
+    ret.append(std::to_string(addr & 0xff));
+    ret.append(".");
+    ret.append(std::to_string((addr >> 8) & 0xff));
+    ret.append(".");
+    ret.append(std::to_string((addr >> 16) & 0xff));
+    ret.append(".");
+    ret.append(std::to_string(addr >> 24));
+    return ret;
+}
