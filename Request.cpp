@@ -6,7 +6,7 @@ Request::Request() : firstLine(false) {
 
 }
 
-void Request::setPath(const std::string &path){
+void Request::setPath(const std::string &path) {
 	Request::path = path;
 }
 
@@ -14,8 +14,7 @@ void Request::setHtmlPage(const std::string &htmlPage) {
 	Request::htmlPage = htmlPage;
 }
 
-void Request::setMethod(const std::string &method)
-{
+void Request::setMethod(const std::string &method) {
 	Request::method = method;
 }
 
@@ -32,14 +31,33 @@ const std::string &Request::getMethod() const {
 }
 
 void Request::parse(std::string const &line) {
-	std::vector<std::string> arr = split(line, " "); // split - return vector string
-	if (!firstLine) {
-		Request::parseFirstLine(arr);
-		firstLine = true;
-	}
-	else if (arr.size() != 2) {
-		// split - return vector string
 
+	if (!firstLine) {
+		Request::parseFirstLine(line);
+	}
+	else if (firstLine) {
+		int colon = line.find(':');
+		if ((colon != std::string::npos) && (line.find(' ', colon) == std::string::npos)) {
+			// need check space before ':' - and and
+			addElemInMap(std::string(&line[0], 5), std::string(&line[colon + 1]));
+		}
+		else {
+			// exception! - "400" "Bad request"
+		}
+
+
+
+
+	}
+//	else if (arr.size() == 2 || arr.size() == 3) {
+		// split - return vector string
+//		if (arr[0][arr[0].length() - 1] == ':' && arr[1][0] == ':') {
+//			 exception! - "400" "Bad request"
+//		}
+//		addElemInMap(arr[0], arr.size() == 2 ? arr[1] : arr[2]);
+//	}
+	else {
+		// exception! - "400" "Bad request"
 	}
 }
 
@@ -51,32 +69,24 @@ Request::~Request() {
 	headers.clear();
 }
 
+// Host: :   google.com
+// asd asd asd asdas asdasd
+
 // Private methods
 
-void	Request::parseFirstLine(std::vector<std::string> const &arr) {
-//	std::vector<std::string> arr; // split - return vector string
+void	Request::parseFirstLine(std::string const &line) {
+	std::vector<std::string> arr = split(line, " ");
+	firstLine = true;
 	if (arr.size() == 3) {
 		if ((arr[0] != "GET") || (arr[0] != "POST") || (arr[0] != "PUT") || (arr[0] != "OPTION") || arr[2] != "HTTP/1.1")
 			return ; // exception - don`t have normal method or ;
 		Request::setMethod(arr[0]);
 		Request::setPath(arr[1]);
-		// check HTTP version
 	}
 	else {
 		// exception - bad counts of arguments;
 	}
 }
-
-//void	Request::parseFirstLine(std::string const &firstLine) {
-//	std::vector<std::string> arr; // split - return vector string
-//	if (arr.size() == 3) {
-//		Request::setMethod(arr[0]);
-//		Request::setPath(arr[1]);
-//	}
-//	else {
-//		// exceptoin - throw ();
-//	}
-//}
 
 std::vector<std::string> split(const std::string& str, const std::string& delimeter) {
 	std::vector<std::string> items;

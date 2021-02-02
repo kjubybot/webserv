@@ -3,6 +3,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <string>
 
 class Request {
 private:
@@ -13,7 +14,7 @@ private:
 	std::map<std::string, std::string> headers;
 
 	std::vector<std::string> split(const std::string& str, const std::string& delimeter);
-	void parseFirstLine(std::vector<std::string> const &arr);
+	void parseFirstLine(std::string const &arr);
 
 public:
 	Request();
