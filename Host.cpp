@@ -6,17 +6,26 @@
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include "Server.hpp"
+#include "Host.hpp"
 
-Server::Server(const std::string &address, uint16_t port) : address(address), port(port), listenSock(0) {}
+Host::Host() {}
 
-Server::~Server() {
-    for (std::list<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it)
-        delete *it;
-    close(listenSock);
+Host::Host(const std::string &address, uint16_t port) {
+    sockAddr.sin_family = AF_INET;
+    sockAddr.sin_port = port;
+    sockAddr.sin_addr.s_addr = inet_addr(address.c_str());
 }
 
-void Server::startServer() {
+Host::~Host() {}
+
+Host::Host(const Host& h) : sockAddr(h.sockAddr) {}
+
+Host& Host::operator=(const Host& h) {
+    sockAddr = h.sockAddr;
+    return *this;
+}
+
+void Host::startServer() {
     struct sockaddr_in listenAddr;
     fd_set rfds, wfds;
 

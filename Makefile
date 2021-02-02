@@ -2,7 +2,8 @@ NAME = webserv
 SRC = \
 	main.cpp\
 	Server.cpp\
-	Connection.cpp
+	Connection.cpp\
+	gnl.cpp
 
 OBJ = $(SRC:.cpp=.o)
 
