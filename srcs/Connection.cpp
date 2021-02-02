@@ -1,10 +1,4 @@
-#include <cstdlib>
-#include <iostream>
-#include <unistd.h>
 #include "Connection.hpp"
-#include "HttpErrorException.hpp"
-#include "HttpErrorPage.hpp"
-#include "util.hpp"
 
 Connection::Connection(int sock, struct sockaddr_in sockAddr) : sock(sock), sockAddr(sockAddr), _isOpen(true) {
     std::cout << iptoa(sockAddr.sin_addr.s_addr) << std::endl;
@@ -18,11 +12,16 @@ int Connection::getSocket() const {
     return sock;
 }
 
+const Request& Connection::getRequest() const {
+    return request;
+}
+
 void Connection::readData() {
     char buf[4096];
     int r = read(sock, buf, 4096);
     if (r > 0) {
         data.append(buf, r);
+        std::cout << data << std::endl;
         try {
             request.parse(data);
         } catch (HttpErrorException& ex) {
@@ -43,4 +42,8 @@ void Connection::writeData() {
 
 bool Connection::isOpen() const {
     return _isOpen;
+}
+
+bool Connection::reqReady() const {
+    return request.isReady();
 }

@@ -8,4 +8,9 @@ include_directories(includes)
 add_executable(webserv
         srcs/main.cpp
         srcs/Host.cpp
-        srcs/Connection.cpp srcs/Server.cpp srcs/util.cpp srcs/Request.cpp srcs/HttpErrorPage.cpp srcs/HttpErrorException.cpp)
+        srcs/Connection.cpp
+        srcs/Server.cpp
+        srcs/util.cpp
+        srcs/Request.cpp
+        srcs/HttpErrorPage.cpp
+        srcs/HttpErrorException.cpp)

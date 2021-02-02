@@ -1,10 +1,17 @@
 #ifndef WEBSERV_CONNECTION_HPP
 #define WEBSERV_CONNECTION_HPP
 
+#include <cstdlib>
+#include <iostream>
 #include <netinet/in.h>
 #include <string>
 #include <sys/socket.h>
+#include <unistd.h>
+#include "Connection.hpp"
+#include "HttpErrorException.hpp"
+#include "HttpErrorPage.hpp"
 #include "Request.hpp"
+#include "util.hpp"
 
 class Connection {
     int sock;
@@ -21,10 +28,11 @@ public:
     ~Connection();
 
     int getSocket() const;
-    Request& getRequest() const;
+    const Request& getRequest() const;
     void readData();
     void writeData();
     bool isOpen() const;
+    bool reqReady() const;
 };
 
 

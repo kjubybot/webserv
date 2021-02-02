@@ -34,6 +34,7 @@ public:
 	void parse(std::string const &line);
 
 	const std::map<std::string, std::string> &getHeaders() const;
+	bool isReady() const;
 
 };
 

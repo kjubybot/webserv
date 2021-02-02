@@ -1,22 +1,12 @@
-#include <arpa/inet.h>
-#include <errno.h>
-#include <cstring>
-#include <fcntl.h>
-#include <iostream>
-#include <netinet/in.h>
-#include <sys/select.h>
-#include <sys/socket.h>
-#include <unistd.h>
 #include "Server.hpp"
-#include "util.hpp"
 
 Server::Server() {}
 
 Server::~Server() {
-    for (std::list<int>::iterator it = sockets.begin(); it != sockets.end(); ++it)
-        close(*it);
-    for (std::list<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it)
+    for (std::list<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it) {
+        close((*it)->getSocket());
         delete *it;
+    }
 }
 
 bool Server::parseConfig(const std::string &filename) {
@@ -126,6 +116,14 @@ bool Server::makeSockets() {
     return true;
 }
 
+void Server::routeRequest(Connection &conn) {
+    const Request req = conn.getRequest();
+
+    for (std::list<Host>::iterator it = hosts.begin(); it != hosts.end(); ++it)
+        if (it->matchRequest(req))
+            return;
+}
+
 void Server::startServer() {
     struct sockaddr_in sockAddr;
     socklen_t sockLen;
@@ -162,6 +160,8 @@ void Server::startServer() {
             for (std::list<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it) {
                 if (FD_ISSET((*it)->getSocket(), &rfds))
                     (*it)->readData();
+//                if ((*it)->reqReady())
+//                    routeRequest(*it);
                 if (FD_ISSET((*it)->getSocket(), &wfds))
                     (*it)->writeData();
             }

@@ -77,3 +77,7 @@ void	Request::parseFirstLine(std::string const &line) {
         throw HttpErrorException("400", "Bad request");
 	}
 }
+
+bool Request::isReady() const {
+    return false;
+}
