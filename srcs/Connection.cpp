@@ -1,6 +1,6 @@
 #include <cstdlib>
 #include <unistd.h>
-#include "Connection.hpp"
+#include "../includes/Connection.hpp"
 
 Connection::Connection(int sock) : sock(sock), _isOpen(true) {}
 
