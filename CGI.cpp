@@ -86,6 +86,6 @@ void CGI::getProcessedContent() const
 		// parent
 	}
 	else {
-		
+
 	}
 }
