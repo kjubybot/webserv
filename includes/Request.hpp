@@ -11,7 +11,10 @@
 class Request {
 private:
 	bool firstLine;
+	bool firstPart;
 	int contentLen;
+	int transferLen;
+
 
 	std::string method;
 	std::string path;
@@ -19,7 +22,7 @@ private:
 
 	std::map<std::string, std::string> headers;
 
-	void parseSecondPart();
+	void parseSecondPart(std::string &line);
 	void parseFirstLine(std::string const &arr);
 	void addElemInMap(std::string &key, std::string &value);
 public:
