@@ -29,8 +29,10 @@ std::string CGI::executeCGI()
 	int		fd[2];
 	pid_t	pid;
 	int 	exec_status = 0;
+	char** args = formArgs();
+	char** envs = formEnvs();
 
-	if (pipe(fd) < 1)
+	if (pipe(fd) < 0)
 		throw std::runtime_error("pipe fails");
 
 	if ((pid = fork()) < 0) {
@@ -51,15 +53,13 @@ std::string CGI::executeCGI()
 			S_IRWXU | S_IRGRP | S_IROTH);
 		if (dup2(fd[1], 1) < 0)
 			throw std::runtime_error("dup2 fails");
-		char** args = formArgs();
-		char** envs = formEnvs();
-		// exec_status = execve(_cgiPath, args, envs);
+		// exec_status = execve(this->_cgiPath, args, envs);
 		close(outputFd);
 		close(fd[0]);
-		freeMatrix(args);
-		freeMatrix(envs);
 		exit(exec_status);
 	}
+	freeMatrix(args);
+	freeMatrix(envs);
 	return (getFileContent("cgi_response"));
 }
 
@@ -74,38 +74,70 @@ char** CGI::formArgs() const
 
 char** CGI::formEnvs() const
 {
-	// http://www.example.com/php/path_info.php/some/stuff?foo=bar
-
 	std::map<std::string, std::string> strEnvs;
 
-	strEnvs["SERVER_SOFTWARE"] = "webserv/14.88";
-	strEnvs["SERVER_NAME"] = "0.1.2.3"; // config->host
-	strEnvs["GATEWAY_INTERFACE"] = "CGI/1.1";
-	strEnvs["SERVER_PROTOCOL"] = "HTTP/1.1";
-	strEnvs["SERVER_PORT"] = "1000"; // config->port
-	strEnvs["REQUEST_METHOD"] = "POST"; // request->method
+	/*
+	if request->headers.count("Authorization") == 1 {
+	 	std::vector<std::string> authVec = split(request->headers["Authorization"];
+	 	if (authVec.size() == 2) {
+	 		strEnvs["AUTH_TYPE"] = authVec[0];
+	 		if (strEnvs["AUTH_TYPE"] == "Basic") {
+				strEnvs["REMOTE_USER"] = encode this shit
+				strEnvs["REMOTE_IDENT"] = encode this shit
+			}
+			else {
+				strEnvs["REMOTE_USER"] = "";
+				strEnvs["REMOTE_IDENT"] = "";
+			}
+		}
+	}
+
+	// example : http://lemp.test/test.php/foo/bar.php?v=1
+
+	strEnvs["SERVER_SOFTWARE"] = "webserv";						// constant
+	strEnvs["GATEWAY_INTERFACE"] = "CGI/1.1";					// constant
+	strEnvs["SERVER_PROTOCOL"] = "HTTP/1.1";					// constant
+	strEnvs["SERVER_NAME"] = "";								// store in Config object
+	strEnvs["SERVER_PORT"] = "1000";							// store in Config object
+	strEnvs["REQUEST_METHOD"] = "GET";							// store in Request object
+	strEnvs["REQUEST_URI"] = "/test.php/foo/bar.php?v=1";		// store in Request object, but need to remove chars after ? (if its presented)
+	strEnvs["QUERY_STRING"] = "v=1";							// store in Request object but need to remove chars before ? (if its presented)
+	strEnvs["CONTENT_TYPE"] = "text/html";						// store in Request object
+	strEnvs["CONTENT_LENGTH"] = "100";							// store in Request object
+	strEnvs["REMOTE_ADDR"] = "127.0.0.1";						// store in Connection
+
 	strEnvs["PATH_INFO"] = "/"; // for tester
-	//strEnvs["PATH_INFO"] = "/some/stuff"; // path after cgi script, request line before ? (if ? not exist - fulll line)
+	// strEnvs["PATH_INFO"] = "/foo/bar.php"; // path after cgi script, request line before ? (if ? not exist - fulll line)
 	strEnvs["PATH_TRANSLATED"] = "/"; // for tester
-	//strEnvs["PATH_TRANSLATED"] = "/home/bla/bla/some/stuff"; // absolute path to server + PATH_INFO
-	strEnvs["SCRIPT_NAME"] = "php/path_info.php"; // location server+ cgi->path
-	strEnvs["CONTENT_TYPE"] = "text/html"; // request->content_type
-	strEnvs["CONTENT_LENGTH"] = "100"; // request->body->length
-	strEnvs["AUTH_TYPE"] = "Basic"; // if authorization header presented - its value before hash, otherwise - not set
-	strEnvs["QUERY_STRING"] = "foo=bar"; // request line after ? (if ? not exist - empty line)
-	strEnvs["REQUEST_URI"] = "www.example.com/php/path_info.php"; // request->uri
-	strEnvs["REMOTE_ADDR"] = "127.0.0.1"; // client ip
-	strEnvs["REMOTE_IDENT"] = ""; // if authorization header presented - its value after hash, otherwise - empty
-	strEnvs["REMOTE_USER"] = ""; // if authorization header presented - its value after hash, otherwise - empty
-	// maybe user can be get by hash of authorization header
-	// add custom headers if they are not presented to map (this headers started with HTTP_, and - replaced by _)
+	// strEnvs["PATH_TRANSLATED"] = "/home/foo/bar.php"; // absolute path to server + PATH_INFO
+	strEnvs["SCRIPT_NAME"] = "/test.php"; // file without full path
+
+	// add headers if they are not presented to map (this headers started with HTTP_, and - replaced by _)
+	 for (iterator it = request->headers.begin(); it != request->headers.end(); it++) {
+	 	std::string header = it->first;
+	 	header.replace(header.find("-"), 1, "_");
+	 	std::transform(str.begin(), str.end(),str.begin(), toupper);
+	 	if (strEnvs.count(header) == 0)
+	 		strEnvs["HTTP_" + header] = it->second;
+	}
+
 	// add passed to main envs
+	 size_t i = 0;
+	 while (mainEnvs[i] != NULL) {
+	 	std::string env(mainEnvs[i]);
+	 	std::string key = env.substr(0, env.find("="));
+	 	std::string value = env.substr(env.find("=") + 1);
+	 	strEnvs[key] = value;
+	 	i++;
+	 }
+	*/
 
 	char** envs = new char* [strEnvs.size() + 1];
 	size_t i = 0;
 	for (std::map<std::string, std::string>::iterator it = strEnvs.begin(); it != strEnvs.end(); it++)
 		envs[i++] = stringDup(it->first + "=" + it->second);
 	envs[i] = NULL;
+
 	return (envs);
 }
 
