@@ -81,6 +81,7 @@ bool Server::makeSockets() {
     std::list<struct sockaddr_in> sockAddrs;
     std::list<struct sockaddr_in>::iterator i, j;
     int sock;
+	int reuse = 1;
 
     for (std::list<Host>::iterator it = hosts.begin(); it != hosts.end(); ++it)
         sockAddrs.push_back(it->getSockAddr());
@@ -112,6 +113,7 @@ bool Server::makeSockets() {
             std::cerr << "Unable to create socket: " << strerror(errno) << std::endl;
             return false;
         }
+        setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const char*)&reuse, sizeof(reuse));
         sockets.push_back(sock);
         if (bind(sock, (struct sockaddr *)&(*i), sizeof(*i))) {
             std::cerr << "Unable to bind socket: " << strerror(errno) << std::endl;

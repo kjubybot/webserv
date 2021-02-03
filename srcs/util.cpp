@@ -61,24 +61,6 @@ std::string iptoa(uint32_t addr) {
     return ret;
 }
 
-std::string getBadResponse() {
-	std::string baseResponse;
-	baseResponse += "HTTP/1.1 400 Bad hueta\r\n";
-	baseResponse += "Content-Length: 10\r\n";
-	baseResponse += "Content-Type: text/html\r\n\r\n";
-	baseResponse += "Bad hueta";
-	return (baseResponse);
-}
-
-std::string getBaseResponse() {
-	std::string baseResponse;
-	baseResponse += "HTTP/1.1 200 OK\r\n";
-	baseResponse += "Content-Length: 12\r\n";
-	baseResponse += "Content-Type: text/html\r\n\r\n";
-	baseResponse += "Hello world";
-	return (baseResponse);
-}
-
 std::string getFileContent(const std::string& filename)
 {
 	int fd = open(filename.c_str(), O_RDONLY);

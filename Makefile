@@ -7,6 +7,7 @@ SRC = $(addprefix srcs/,\
 	Request.cpp\
 	HttpErrorPage.cpp\
 	HttpErrorException.cpp\
+	CGI.cpp\
 	util.cpp)
 
 OBJ = $(SRC:.cpp=.o)
