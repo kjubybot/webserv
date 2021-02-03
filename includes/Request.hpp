@@ -11,9 +11,12 @@
 class Request {
 private:
 	bool firstLine;
+	int contentLen;
+
 	std::string method;
 	std::string path;
 	std::string htmlPage;
+
 	std::map<std::string, std::string> headers;
 
 	void parseFirstLine(std::string const &arr);
@@ -21,19 +24,19 @@ private:
 
 public:
 	Request();
-
 	virtual ~Request();
+
 	void setPath(const std::string &path);
+	void setMethod(const std::string &method);
 	void setHtmlPage(const std::string &htmlPage);
 
-	void setMethod(const std::string &method);
 	const std::string &getPath() const;
 	const std::string &getMethod() const;
-
 	const std::string &getHtmlPage() const;
-	void parse(std::string const &line);
-
 	const std::map<std::string, std::string> &getHeaders() const;
+
+	void resetRequest();
+	void parse(std::string &line);
 
 };
 
