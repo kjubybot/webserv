@@ -4,6 +4,7 @@
 #include "Connection.hpp"
 #include "HttpErrorException.hpp"
 #include "HttpErrorPage.hpp"
+#include "Response.hpp"
 #include "util.hpp"
 
 Connection::Connection(int sock, struct sockaddr_in sockAddr) : sock(sock), sockAddr(sockAddr), _isOpen(true) {
@@ -28,8 +29,14 @@ void Connection::readData() {
         } catch (HttpErrorException& ex) {
             std::cout << "EXC" << std::endl;
             data = HttpErrorPage(ex.getCode(), ex.getDescription()).createPage();
-            _isOpen = false;
+			data = getBadResponse();
+			write(sock, data.data(), data.length());
+			data.clear();
+			_isOpen = false;
         }
+        data = getBaseResponse();
+		write(sock, data.data(), data.length());
+		data.clear();
     } else
         _isOpen = false;
 }

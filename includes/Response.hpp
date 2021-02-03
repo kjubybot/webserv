@@ -7,7 +7,7 @@
 class Response {
     std::string code;
     std::string body;
-    std::map<std::string, std::string>
+    std::map<std::string, std::string> n;
 public:
     Response();
     ~Response();

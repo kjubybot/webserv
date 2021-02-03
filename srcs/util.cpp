@@ -60,3 +60,53 @@ std::string iptoa(uint32_t addr) {
     ret.append(std::to_string(addr >> 24));
     return ret;
 }
+
+std::string getBadResponse() {
+	std::string baseResponse;
+	baseResponse += "HTTP/1.1 400 Bad hueta\r\n";
+	baseResponse += "Content-Length: 10\r\n";
+	baseResponse += "Content-Type: text/html\r\n\r\n";
+	baseResponse += "Bad hueta";
+	return (baseResponse);
+}
+
+std::string getBaseResponse() {
+	std::string baseResponse;
+	baseResponse += "HTTP/1.1 200 OK\r\n";
+	baseResponse += "Content-Length: 12\r\n";
+	baseResponse += "Content-Type: text/html\r\n\r\n";
+	baseResponse += "Hello world";
+	return (baseResponse);
+}
+
+std::string getFileContent(const std::string& filename)
+{
+	int fd = open(filename.c_str(), O_RDONLY);
+	std::string result;
+	std::string tmp;
+	while (get_next_line(fd, tmp))
+		result += tmp + "\n";
+	if (tmp != "")
+		result += tmp;
+	return (result);
+}
+
+char* stringDup(const std::string& str)
+{
+	char* result = new char[str.size() + 1];
+	size_t i = -1;
+	while (str[++i] != '\0')
+		result[i] = str[i];
+	result[i] = '\0';
+	return (result);
+}
+
+void freeMatrix(char** matrix)
+{
+	if (!matrix)
+		return ;
+	size_t i = -1;
+	while (matrix[++i] != NULL)
+		delete matrix[i];
+	delete matrix;
+}

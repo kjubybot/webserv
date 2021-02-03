@@ -39,7 +39,7 @@ void Request::parse(std::string const &line) {
 		Request::parseFirstLine(line);
 	}
 	else if (firstLine) {
-		int colon = line.find(':');
+		size_t colon = line.find(':');
 		if ((colon != std::string::npos) && line[0] != ' ' && line[colon - 1] != ' ') {
 			std::string key = std::string(line, colon);
 			std::string value = std::string(trim(&line[colon + 1]));
