@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <netinet/in.h>
+#include <queue>
 #include <string>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -11,6 +12,7 @@
 #include "HttpErrorException.hpp"
 #include "HttpErrorPage.hpp"
 #include "Request.hpp"
+#include "Response.hpp"
 #include "util.hpp"
 
 class Connection {
@@ -18,7 +20,8 @@ class Connection {
     struct sockaddr_in sockAddr;
     bool _isOpen;
     std::string data;
-    Request request;
+    std::queue<Request> requests;
+    std::queue<Response> responses;
 
     Connection();
     Connection(const Connection &);
@@ -33,7 +36,7 @@ public:
     void writeData();
     bool isOpen() const;
     bool reqReady() const;
+    bool resReady() const;
 };
-
 
 #endif

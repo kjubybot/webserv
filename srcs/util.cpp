@@ -21,12 +21,12 @@ int get_next_line(int fd, std::string& line) {
 std::string trim(const std::string& s) {
     size_t pos, len;
     pos = 0;
-    while (pos < s.length() && (s[pos] == '\n' || (s[pos] >= 9 && s[pos] <= 13)))
+    while (pos < s.length() && isspace(s[pos]))
         ++pos;
     if (pos == s.length())
         return std::string();
-    len = pos + 1;
-    while (len < s.length() && (s[len] != '\n' && !(s[len] >= 9 && s[len] <= 13)))
+    len = 0;
+    while (len + pos < s.length() && !isspace(s[len + pos]))
         ++len;
     return s.substr(pos, len);
 }

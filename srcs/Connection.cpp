@@ -1,7 +1,7 @@
 #include "Connection.hpp"
 
 Connection::Connection(int sock, struct sockaddr_in sockAddr) : sock(sock), sockAddr(sockAddr), _isOpen(true) {
-    std::cout << iptoa(sockAddr.sin_addr.s_addr) << std::endl;
+    std::cout << "Connection from " << iptoa(sockAddr.sin_addr.s_addr) << std::endl;
 }
 
 Connection::~Connection() {
@@ -13,7 +13,7 @@ int Connection::getSocket() const {
 }
 
 const Request& Connection::getRequest() const {
-    return request;
+    return requests.front();
 }
 
 void Connection::readData() {
@@ -22,11 +22,20 @@ void Connection::readData() {
     if (r > 0) {
         data.append(buf, r);
         std::cout << data << std::endl;
+//        if (data.find('\r') != std::string::npos) {
+//            std::cout << data.substr(0, data.find('\n'));
+//            if (data.substr(0, data.find('\r')) == "GET / HTTP/1.1")
+//                responses.push(Response::fromString("200", "OK"));
+//            return;
+//        }
+        if (requests.empty() || requests.back().isReady())
+            requests.push(Request());
         try {
-            request.parse(data);
-        } catch (HttpErrorException& ex) {
-            std::cout << "EXC" << std::endl;
-            data = HttpErrorPage(ex.getCode(), ex.getDescription()).createPage();
+            requests.back().parse(data);
+        } catch (const HttpErrorException& ex) {
+            requests.pop();
+            HttpErrorPage rp(ex.getCode(), ex.getDescription());
+            responses.push(Response::fromString(ex.getCode(), rp.createPage()));
             _isOpen = false;
         }
     } else
@@ -34,10 +43,9 @@ void Connection::readData() {
 }
 
 void Connection::writeData() {
-    if (data.length() > 0) {
-        write(sock, data.data(), data.length());
-        data.clear();
-    }
+    std::string resData = responses.front().getData();
+    write(sock, resData.data(), resData.length());
+    responses.pop();
 }
 
 bool Connection::isOpen() const {
@@ -45,5 +53,9 @@ bool Connection::isOpen() const {
 }
 
 bool Connection::reqReady() const {
-    return request.isReady();
+    return requests.front().isReady();
+}
+
+bool Connection::resReady() const {
+    return !responses.empty();
 }

@@ -131,7 +131,7 @@ void Server::startServer() {
 
     if (!makeSockets())
         return;
-    std::cout << "Starting server" << std::endl;
+    std::cout << "|" << trim("     Starting server      ") << "|" << std::endl;
     while (true) {
         FD_ZERO(&rfds);
         FD_ZERO(&wfds);
@@ -139,10 +139,11 @@ void Server::startServer() {
         for (std::list<int>::iterator it = sockets.begin(); it != sockets.end(); ++it)
             FD_SET(*it, &rfds);
         for (std::list<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it) {
+            if ((*it)->resReady())
+                FD_SET((*it)->getSocket(), &wfds);
             if ((*it)->isOpen()) {
                 FD_SET((*it)->getSocket(), &rfds);
-                FD_SET((*it)->getSocket(), &wfds);
-            } else {
+            } else if (!(*it)->resReady()){
                 delete *it;
                 connections.erase(it);
             }
