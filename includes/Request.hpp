@@ -19,9 +19,9 @@ private:
 
 	std::map<std::string, std::string> headers;
 
+	void parseSecondPart();
 	void parseFirstLine(std::string const &arr);
 	void addElemInMap(std::string &key, std::string &value);
-
 public:
 	Request();
 	virtual ~Request();

@@ -1,5 +1,6 @@
 #include "Request.hpp"
 
+//#define PRINT(x) { std::cout << x << std::endl; };
 // Public methods
 
 Request::Request() : firstLine(false), contentLen(0) {}
@@ -32,14 +33,15 @@ const std::map<std::string, std::string> &Request::getHeaders() const {
 	return headers;
 }
 
-#define PRINT(x) { std::cout << x << std::endl; };
-
 void Request::parse(std::string &line) {
 	size_t newLine = line.find('\n');
-	std::string headLine = line;
 	std::string copyLine = line.substr(0, newLine);
-	headLine.substr(newLine + 1);
-	while (newLine != std::string::npos) //!headLine.empty()
+	line.erase(0, newLine + 1);
+	if (copyLine.empty()) {
+		std::cout << "End parsing 1st part" << std::endl; // parse second part
+		return;
+	}
+	while (newLine != std::string::npos)
 	{
 		if (!firstLine) {
 			Request::parseFirstLine(copyLine);
@@ -48,7 +50,10 @@ void Request::parse(std::string &line) {
 			size_t colon = copyLine.find(':');
 			if ((colon != std::string::npos) && (copyLine[0] != ' ') && (copyLine[colon - 1] != ' ')) {
 				std::string key = copyLine.substr(0, colon);
-				std::string value = std::string(trim(&copyLine[colon + 1]));
+				copyLine.erase(0, colon + 1);
+				copyLine.erase(0 , copyLine.find_first_not_of(' '));
+				copyLine.erase(copyLine.find_last_not_of(' ') + 1);
+				std::string value = copyLine;
 				std::transform(key.begin(), key.end(), key.begin(), ::tolower);
 				if (key == "content-length") {
 					contentLen = std::stoi(value);
@@ -65,17 +70,16 @@ void Request::parse(std::string &line) {
 		else {
 			throw HttpErrorException("400", "Bad request");
 		}
-		newLine = headLine.find('\n');
-		copyLine = headLine.substr(0, newLine);
-		headLine.erase(0, newLine + 1);
-		PRINT("Asd");
+		newLine = line.find('\n');
+		copyLine = line.substr(0, newLine);
+		line.erase(0, newLine);
+//		PRINT("Asd");
 	}
-	std::map<std::string, std::string>::iterator it;
-
-	for (it= this->headers.begin(); it != headers.end(); ++it)
-	{
-		PRINT("|" << it->first << "|" << ": " << it->second)
-	}
+//	std::map<std::string, std::string>::iterator it;
+//
+//	for (it= this->headers.begin(); it != headers.end(); ++it) {
+//		PRINT("|" << it->first << "|" << ": " << it->second)
+//	}
 }
 
 void Request::resetRequest() {
@@ -87,6 +91,16 @@ Request::~Request() {
 }
 
 // Private methods
+
+void Request::parseSecondPart() {
+	// if : Content-Len && POST - need limit size read
+
+	// if : Transfer-Encoding and == chunked, read len symbols
+
+
+
+
+}
 
 void Request::addElemInMap(std::string &key, std::string &value) {
 
