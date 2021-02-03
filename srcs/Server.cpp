@@ -34,6 +34,7 @@ bool Server::parseConfig(const std::string &filename) {
 Host Server::parseHost(int fd) {
     std::string line, name;
     std::vector<std::string> items;
+    std::map<std::string, std::string> error_pages;
     struct sockaddr_in sockAddr;
 
     sockAddr.sin_family = AF_INET;
@@ -61,6 +62,11 @@ Host Server::parseHost(int fd) {
                 sockAddr.sin_addr.s_addr = inet_addr(items[0].c_str());
                 sockAddr.sin_port = std::stoi(items[1]);
             }
+        } else if (items[0] == "error_page") {
+            if (items.size() < 3)
+                throw "incomplete error_page directive";
+            for (size_t i = 1; i < items.size() - 1; ++i)
+                error_pages[items[i]] = items[items.size() - 1];
         }
     }
     sockAddr.sin_port = (sockAddr.sin_port >> 8) | (sockAddr.sin_port << 8);
@@ -70,7 +76,7 @@ Host Server::parseHost(int fd) {
 bool Server::makeSockets() {
     std::list<struct sockaddr_in> sockAddrs;
     std::list<struct sockaddr_in>::iterator i, j;
-    int sock;
+    int sock, soReuse;
 
     for (std::list<Host>::iterator it = hosts.begin(); it != hosts.end(); ++it)
         sockAddrs.push_back(it->getSockAddr());
@@ -96,6 +102,7 @@ bool Server::makeSockets() {
         ++i;
     }
     i = sockAddrs.begin();
+    soReuse = 1;
     while (i != sockAddrs.end()) {
         sock = socket(AF_INET, SOCK_STREAM, 0);
         if (sock < 0) {
@@ -103,6 +110,7 @@ bool Server::makeSockets() {
             return false;
         }
         sockets.push_back(sock);
+        setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &soReuse, sizeof(soReuse));
         if (bind(sock, (struct sockaddr *)&(*i), sizeof(*i))) {
             std::cerr << "Unable to bind socket: " << strerror(errno) << std::endl;
             return false;
@@ -131,7 +139,7 @@ void Server::startServer() {
 
     if (!makeSockets())
         return;
-    std::cout << "|" << trim("     Starting server      ") << "|" << std::endl;
+    std::cout << "Starting server" << std::endl;
     while (true) {
         FD_ZERO(&rfds);
         FD_ZERO(&wfds);

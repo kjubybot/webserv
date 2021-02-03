@@ -19,6 +19,10 @@ struct sockaddr_in Host::getSockAddr() const {
     return sockAddr;
 }
 
+void Host::setErrorPages(const std::map<std::string, std::string> errorPages) {
+    this->errorPages = errorPages;
+}
+
 bool Host::matchRequest(const Request &) const {
     return true;
 }
