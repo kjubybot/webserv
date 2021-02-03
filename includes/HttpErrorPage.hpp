@@ -2,8 +2,6 @@
 #define HTTPERRORPAGE_HPP
 
 #include <string>
-#include <fcntl.h>
-#include <unistd.h>
 
 class HttpErrorPage
 {
@@ -20,7 +18,7 @@ public :
 	explicit HttpErrorPage(const std::string& code, const std::string& description);
 	~HttpErrorPage();
 
-	std::string createPage();
+	const std::string& createPage() const;
 };
 
 #endif
