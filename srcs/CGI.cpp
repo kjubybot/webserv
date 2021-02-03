@@ -34,14 +34,14 @@ std::string CGI::executeCGI()
 
 	if (pipe(fd) < 0)
 		throw std::runtime_error("pipe fails");
-
-	if ((pid = fork()) < 0) {
+	pid = fork();
+	if (pid < 0) {
 		throw std::runtime_error("fork fails");
 	}
 	else if (pid > 0) {
 		int status = 0;
 		close(fd[0]);
-		// write(fd[1], content, content.size()); // content get by request
+		// write(fd[1], content, content-length);
 		close(fd[1]);
 		waitpid(pid, &status, 0);
 	}
@@ -49,11 +49,58 @@ std::string CGI::executeCGI()
 		close(fd[1]);
 		if (dup2(fd[0], 0) < 0)
 			throw std::runtime_error("dup2 fails");
-		int outputFd = open("cgi_response", O_RDWR | O_CREAT,
-			S_IRWXU | S_IRGRP | S_IROTH);
+		int outputFd = open("./cgi_response", O_RDWR | O_CREAT | O_TRUNC,
+							S_IRWXU | S_IRGRP | S_IROTH);
 		if (dup2(fd[1], 1) < 0)
 			throw std::runtime_error("dup2 fails");
-		// exec_status = execve(this->_cgiPath, args, envs);
+		exec_status = execve(this->_cgiPath.c_str(), args, envs);
+		close(outputFd);
+		close(fd[0]);
+		exit(exec_status);
+	}
+	freeMatrix(args);
+	freeMatrix(envs);
+	return (getFileContent("cgi_response"));
+}
+
+std::string CGI::executeBaseCGI()
+{
+	int		fd[2];
+	pid_t	pid;
+	int 	exec_status = 0;
+	char** args = formArgs();
+
+	std::map<std::string, std::string> strEnvs;
+
+	char** envs = new char*[strEnvs.size() + 1];
+	size_t i = 0;
+	for (std::map<std::string, std::string>::iterator it = strEnvs.begin(); it != strEnvs.end(); it++)
+		envs[i++] = stringDup(it->first + "=" + it->second);
+	envs[i] = NULL;
+
+
+	if (pipe(fd) < 0)
+		throw std::runtime_error("pipe fails");
+	pid = fork();
+	if (pid < 0) {
+		throw std::runtime_error("fork fails");
+	}
+	else if (pid > 0) {
+		int status = 0;
+		close(fd[0]);
+		write(fd[1], "", 0);
+		close(fd[1]);
+		waitpid(pid, &status, 0);
+	}
+	else {
+		close(fd[1]);
+		if (dup2(fd[0], 0) < 0)
+			throw std::runtime_error("dup2 fails");
+		int outputFd = open("./cgi_response", O_RDWR | O_CREAT | O_TRUNC,
+							S_IRWXU | S_IRGRP | S_IROTH);
+		if (dup2(fd[1], 1) < 0)
+			throw std::runtime_error("dup2 fails");
+		exec_status = execve(this->_cgiPath.c_str(), args, envs);
 		close(outputFd);
 		close(fd[0]);
 		exit(exec_status);

@@ -27,11 +27,14 @@ private :
 	char** formEnvs() const;
 
 public :
+
 	explicit CGI(const std::string& path, const std::string& source); // Request, Config
 	~CGI();
 	CGI(const CGI& cgi);
 
 	std::string processCGI();
+	std::string executeBaseCGI();
+
 	const std::string& getPath() const;
 	const std::string& getSource() const;
 };
