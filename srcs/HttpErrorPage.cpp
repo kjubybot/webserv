@@ -56,7 +56,5 @@ HttpErrorPage::HttpErrorPage(const std::string& code, const std::string& descrip
 HttpErrorPage::~HttpErrorPage()
 { }
 
-std::string HttpErrorPage::createPage()
-{
-	return (_content);
-}
+const std::string& HttpErrorPage::createPage() const
+{ return (this->_content); }

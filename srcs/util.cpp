@@ -60,3 +60,45 @@ std::string iptoa(uint32_t addr) {
     ret.append(std::to_string(addr >> 24));
     return ret;
 }
+
+std::string getFileContent(const std::string& filename)
+{
+	int fd = open(filename.c_str(), O_RDONLY);
+	std::string result;
+	std::string tmp;
+	while (get_next_line(fd, tmp))
+		result += tmp + "\n";
+	if (tmp != "")
+		result += tmp;
+	return (result);
+}
+
+char* stringDup(const std::string& str)
+{
+	char* result = new char[str.size() + 1];
+	size_t i = -1;
+	while (str[++i] != '\0')
+		result[i] = str[i];
+	result[i] = '\0';
+	return (result);
+}
+
+void freeMatrix(char** matrix)
+{
+	if (!matrix)
+		return ;
+	size_t i = -1;
+	while (matrix[++i] != NULL)
+		delete matrix[i];
+	delete matrix;
+}
+
+std::string skipWS(const std::string &str)
+{
+	std::string result(str);
+	result.erase(0, result.find_first_not_of(' '));
+	result.erase(result.find_last_not_of(' ') + 1);
+	result.erase(0, result.find_first_not_of('\t'));
+	result.erase(result.find_last_not_of('\t') + 1);
+	return (result);
+}
