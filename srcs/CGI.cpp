@@ -29,6 +29,7 @@ std::string CGI::executeCGI()
 	int		fd[2];
 	pid_t	pid;
 	int 	exec_status = 0;
+	int		status = 0;
 	char** args = formArgs();
 	char** envs = formEnvs();
 
@@ -40,18 +41,20 @@ std::string CGI::executeCGI()
 	}
 	else if (pid > 0) {
 		int status = 0;
-		close(fd[0]);
-		// write(fd[1], content, content-length);
-		close(fd[1]);
+		// write(fd[1], content, content-length); ???
+		// close(fd[1]); ???
 		waitpid(pid, &status, 0);
+		if (WIFEXITED(status))
+			status = WEXITSTATUS(status);
+		std::cout << "status: " << status << std::endl;
 	}
 	else {
-		close(fd[1]);
+		// close(fd[1]); ???
+		int outputFd = open("./cgi_response", O_RDWR | O_CREAT | O_TRUNC,
+			S_IRWXU | S_IRGRP | S_IROTH);
 		if (dup2(fd[0], 0) < 0)
 			throw std::runtime_error("dup2 fails");
-		int outputFd = open("./cgi_response", O_RDWR | O_CREAT | O_TRUNC,
-							S_IRWXU | S_IRGRP | S_IROTH);
-		if (dup2(fd[1], 1) < 0)
+		if (dup2(outputFd, 1) < 0)
 			throw std::runtime_error("dup2 fails");
 		exec_status = execve(this->_cgiPath.c_str(), args, envs);
 		close(outputFd);
@@ -60,7 +63,7 @@ std::string CGI::executeCGI()
 	}
 	freeMatrix(args);
 	freeMatrix(envs);
-	return (getFileContent("cgi_response"));
+	return (getFileContent("./cgi_response"));
 }
 
 std::string CGI::executeBaseCGI()
@@ -68,16 +71,9 @@ std::string CGI::executeBaseCGI()
 	int		fd[2];
 	pid_t	pid;
 	int 	exec_status = 0;
+	int		status = 0;
 	char** args = formArgs();
-
-	std::map<std::string, std::string> strEnvs;
-
-	char** envs = new char*[strEnvs.size() + 1];
-	size_t i = 0;
-	for (std::map<std::string, std::string>::iterator it = strEnvs.begin(); it != strEnvs.end(); it++)
-		envs[i++] = stringDup(it->first + "=" + it->second);
-	envs[i] = NULL;
-
+	char** envs = NULL;
 
 	if (pipe(fd) < 0)
 		throw std::runtime_error("pipe fails");
@@ -87,27 +83,29 @@ std::string CGI::executeBaseCGI()
 	}
 	else if (pid > 0) {
 		int status = 0;
-		close(fd[0]);
-		write(fd[1], "", 0);
+		write(fd[1], "hello there", 11);
 		close(fd[1]);
 		waitpid(pid, &status, 0);
+		if (WIFEXITED(status))
+			status = WEXITSTATUS(status);
+		std::cout << "status: " << status << std::endl;
 	}
 	else {
 		close(fd[1]);
+		int outputFd = open("./cgi_response", O_RDWR | O_CREAT | O_TRUNC,
+			S_IRWXU | S_IRGRP | S_IROTH);
 		if (dup2(fd[0], 0) < 0)
 			throw std::runtime_error("dup2 fails");
-		int outputFd = open("./cgi_response", O_RDWR | O_CREAT | O_TRUNC,
-							S_IRWXU | S_IRGRP | S_IROTH);
-		if (dup2(fd[1], 1) < 0)
+		if (dup2(outputFd, 1) < 0)
 			throw std::runtime_error("dup2 fails");
 		exec_status = execve(this->_cgiPath.c_str(), args, envs);
 		close(outputFd);
 		close(fd[0]);
 		exit(exec_status);
 	}
-	freeMatrix(args);
-	freeMatrix(envs);
-	return (getFileContent("cgi_response"));
+		freeMatrix(args);
+//		freeMatrix(envs);
+		return (getFileContent("./cgi_response"));
 }
 
 char** CGI::formArgs() const
