@@ -95,10 +95,19 @@ void freeMatrix(char** matrix)
 
 std::string skipWS(const std::string &str)
 {
-	std::string result(str);
-	result.erase(0, result.find_first_not_of(' '));
-	result.erase(result.find_last_not_of(' ') + 1);
-	result.erase(0, result.find_first_not_of('\t'));
-	result.erase(result.find_last_not_of('\t') + 1);
-	return (result);
+	size_t startPos = 0, endPos = str.size() - 1;
+
+	while (startPos < str.size()) {
+		if (str[startPos] == ' ' || (str[startPos] >= 9 && str[startPos] <= 13))
+			startPos++;
+		else
+			break ;
+	}
+	while (endPos > 0) {
+		if (str[endPos] == ' ' || (str[endPos] >= 9 && str[endPos] <= 13))
+			endPos--;
+		else
+			break ;
+	}
+	return (str.substr(startPos, endPos - startPos + 1));
 }
