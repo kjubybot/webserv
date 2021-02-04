@@ -31,7 +31,7 @@ public:
     const std::string& getRoot() const;
     void setRoot(const std::string& root);
     void setErrorPages(const std::map<std::string, std::string> errorPages);
-    Response processRequest(const Request& r) const;
+    Response processRequest(const Request& r);
 };
 
 #endif

@@ -67,24 +67,25 @@ void Host::setErrorPages(const std::map<std::string, std::string> errorPages) {
     this->errorPages = errorPages;
 }
 
-Response Host::processRequest(const Request&) const {
-    Response ret("200");
-//    std::string fullPath;
-//    struct stat fStat;
+Response Host::processRequest(const Request& r) {
+    Response ret;
+    std::string fullPath;
+    struct stat fStat;
+    std::map<std::string, std::string> errorMap;
 
     if (autoindex)
         ;
-    /* if (r.hasError())
-     *     return makeError(r.getErrorCode(), r.getErrorMessage());
-     * fullPath = root + r.getUri();
-     * if (stat(fullPath.c_str(), &fStat))
-     *     return makeError("404", "Not found");
-     * if (fStat.st_mode & S_IFDIR) {
-     *     if (autoindex)
-     *         ret = Response::fromString("200", "OK", makeAutoindex(r.getUri()));
-     *     else
-     *         ret = makeError("403", "Forbidden");
-     * } else
-     *     ret = Response::fromFile("200", "OK", fullPath);*/
+     if (r.isFlagError())
+         return makeError(r.getError().first, r.getError().second);
+      fullPath = root + r.getPath();
+      if (stat(fullPath.c_str(), &fStat))
+          return makeError("404", "Not found");
+      if (fStat.st_mode & S_IFDIR) {
+          if (autoindex)
+              ret = Response::fromString("200", "OK", makeAutoindex(r.getPath()));
+          else
+              ret = makeError("403", "Forbidden");
+      } else
+          ret = Response::fromFile("200", "OK", fullPath);
     return ret;
 }

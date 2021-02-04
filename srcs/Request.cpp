@@ -13,6 +13,10 @@ void Request::setHtmlPage(const std::string &htmlPage) {
 	Request::htmlPage = htmlPage;
 }
 
+const std::pair<std::string, std::string> Request::getError() const {
+    return *(error.begin());
+}
+
 void Request::setMethod(const std::string &method) {
 	Request::method = method;
 }
@@ -64,6 +68,7 @@ void Request::parse(std::string &line) {
 						contentLen = std::stoi(value);
 					}
 					if (contentLen && method == "GET") {
+					    finishBody = true;
 						addError("400", "Bad request");
 						throw HttpErrorException("400", "Bad request");
 					}
@@ -79,8 +84,8 @@ void Request::parse(std::string &line) {
 				throw HttpErrorException("400", "Bad request");
 			}
 			newLine = line.find('\n');
-			copyLine = line.substr(0, newLine);
-			line.erase(0, newLine);
+            copyLine = line.substr(0, newLine);
+            line.erase(0, newLine + 1);
 //		PRINT("Asd");
 		}
 //	std::map<std::string, std::string>::iterator it;
@@ -157,7 +162,8 @@ void Request::parseSecondPart(std::string &line) {
 			addError("501", "Not Implemented");
 			throw HttpErrorException("501", "Not Implemented");
 		}
-	}
+	} else
+	    finishBody = true;
 }
 
 void Request::addError(std::string errorKey, std::string errorValue) {

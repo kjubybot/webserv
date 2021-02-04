@@ -14,9 +14,9 @@ private:
 	bool firstPart;
 	bool finishBody;
 	bool flagError;
-	int remainder;
+	size_t remainder;
 	int contentLen;
-	int transferLen;
+	size_t transferLen;
 
 	std::string path;
 	std::string method;
@@ -43,13 +43,14 @@ public:
 	const std::string &getMethod() const;
 	const std::string &getHtmlPage() const;
 	const std::map<std::string, std::string> &getHeaders() const;
-	bool isReady() const;
 
 	void parse(std::string &line);
 
 	bool isFinishBody() const;
 
 	bool isFlagError() const;
+
+    const std::pair<std::string, std::string> getError() const;
 
 };
 

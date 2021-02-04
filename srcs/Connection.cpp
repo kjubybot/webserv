@@ -30,9 +30,10 @@ void Connection::readData() {
     if (r > 0) {
         data.append(buf, r);
         std::cout << data << std::endl;
-        if (requests.empty() || requests.back().isReady())
+        if (requests.empty() || requests.back().isFinishBody())
             requests.push(Request());
         try {
+            std::cout << requests.back().isFinishBody() << std::endl;
             requests.back().parse(data);
         } catch (const HttpErrorException& ex) {
             _isOpen = false;
@@ -54,7 +55,7 @@ bool Connection::isOpen() const {
 bool Connection::reqReady() const {
     if (requests.empty())
         return false;
-    return requests.front().isReady();
+    return requests.front().isFinishBody();
 }
 
 bool Connection::resReady() const {

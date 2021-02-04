@@ -12,10 +12,11 @@ Response::Response(const std::string& code, const std::string& body) : code(code
         headers["Connection"] = "close";
 }
 
-Response::Response(const Response& r) : code(r.code), body(r.body), headers(r.headers) {}
+Response::Response(const Response& r) : code(r.code), message(r.message), body(r.body), headers(r.headers) {}
 
 Response& Response::operator=(const Response& r) {
     code = r.code;
+    message = r.message;
     body = r.body;
     headers = r.headers;
     return *this;
@@ -24,7 +25,7 @@ Response& Response::operator=(const Response& r) {
 Response::~Response() {}
 
 std::string Response::getData() const {
-    std::string data = "HTTP/1.1 " + code + " MSG\n";
+    std::string data = "HTTP/1.1 " + code + " " + message + "\n";
     for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
         data.append(it->first + ": " + it->second + "\n");
     data.append("\n");
@@ -61,11 +62,12 @@ Response Response::fromFile(const std::string& code, const std::string& message,
     ret.headers["Content-Length"] = std::to_string(ret.body.length());
     return ret;
 }
-
+#include <iostream>
 Response Response::fromString(const std::string& code, const std::string& message, const std::string& body) {
     Response ret(code);
 
     ret.message = message;
+    std::cout << message << std::endl;
     ret.body = body;
     ret.headers["Content-Length"] = std::to_string(ret.body.length());
     return ret;
