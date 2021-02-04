@@ -3,7 +3,7 @@
 
 #include <arpa/inet.h>
 #include <cstring>
-#include <errno.h>
+#include <cerrno>
 #include <fcntl.h>
 #include <iostream>
 #include <list>
@@ -24,8 +24,8 @@ class Server {
     Server(const Server &);
     Server &operator=(const Server &);
     Host parseHost(int fd);
+    Host matchHost(const Connection& conn, const Request& r);
     bool makeSockets();
-    void routeRequest(Connection& conn);
 public:
     Server();
     ~Server();

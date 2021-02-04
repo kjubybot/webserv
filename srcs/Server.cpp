@@ -31,6 +31,29 @@ bool Server::parseConfig(const std::string &filename) {
     return true;
 }
 
+Host Server::matchHost(const Connection& conn, const Request& r) {
+    std::map<std::string, std::string> headers = r.getHeaders();
+    std::list<Host> filteredHosts;
+    struct sockaddr_in hostAddr, connAddr;
+
+    getsockname(conn.getSocket(), (struct sockaddr *) &connAddr, 0);
+    for (std::list<Host>::const_iterator it = hosts.begin(); it != hosts.end(); ++it) {
+        hostAddr = it->getSockAddr();
+        if (connAddr.sin_port == hostAddr.sin_port &&
+            (hostAddr.sin_addr.s_addr == connAddr.sin_addr.s_addr || hostAddr.sin_addr.s_addr == 0))
+            filteredHosts.push_back(*it);
+    }
+    if (headers.find("host") != headers.end()) {
+        std::string hostname = headers[std::string("host")];
+        for (std::list<Host>::const_iterator it = filteredHosts.begin(); it != filteredHosts.end(); ++it) {
+                if (it->getName() == hostname)
+                    return *it;
+        }
+    }
+    return filteredHosts.front();
+
+}
+
 Host Server::parseHost(int fd) {
     std::string line, name;
     std::vector<std::string> items;
@@ -124,14 +147,6 @@ bool Server::makeSockets() {
     return true;
 }
 
-void Server::routeRequest(Connection &conn) {
-    const Request req = conn.getRequest();
-
-    for (std::list<Host>::iterator it = hosts.begin(); it != hosts.end(); ++it)
-        if (it->matchRequest(req))
-            return;
-}
-
 void Server::startServer() {
     struct sockaddr_in sockAddr;
     socklen_t sockLen;
@@ -169,8 +184,8 @@ void Server::startServer() {
             for (std::list<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it) {
                 if (FD_ISSET((*it)->getSocket(), &rfds))
                     (*it)->readData();
-//                if ((*it)->reqReady())
-//                    routeRequest(*it);
+                if ((*it)->reqReady())
+                    (*it)->addResponse(matchHost(**it, (*it)->getRequest()).processRequest((*it)->getRequest()));
                 if (FD_ISSET((*it)->getSocket(), &wfds))
                     (*it)->writeData();
             }

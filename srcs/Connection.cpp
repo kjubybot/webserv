@@ -16,18 +16,16 @@ const Request& Connection::getRequest() const {
     return requests.front();
 }
 
+struct sockaddr_in Connection::getSockAddr() const {
+    return sockAddr;
+}
+
 void Connection::readData() {
     char buf[4096];
     int r = read(sock, buf, 4096);
     if (r > 0) {
         data.append(buf, r);
         std::cout << data << std::endl;
-//        if (data.find('\r') != std::string::npos) {
-//            std::cout << data.substr(0, data.find('\n'));
-//            if (data.substr(0, data.find('\r')) == "GET / HTTP/1.1")
-//                responses.push(Response::fromString("200", "OK"));
-//            return;
-//        }
         if (requests.empty() || requests.back().isReady())
             requests.push(Request());
         try {
@@ -58,4 +56,8 @@ bool Connection::reqReady() const {
 
 bool Connection::resReady() const {
     return !responses.empty();
+}
+
+void Connection::addResponse(const Response& r) {
+    responses.push(r);
 }

@@ -3,6 +3,7 @@ project(webserv)
 
 set(CMAKE_CXX_STANDARD 98)
 
+add_compile_options(-Wall -Wextra -Werror)
 include_directories(includes)
 
 add_executable(webserv

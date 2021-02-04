@@ -32,13 +32,29 @@ std::string Response::getData() const {
     return data;
 }
 
-Response Response::fromFile(const std::string& code, const std::string& filename) {
-    Response ret(code);
+void Response::setCode(const std::string& code) {
+    this->code = code;
+}
 
+void Response::setMessage(const std::string& message) {
+    this->message = message;
+}
+
+void Response::setBody(const std::string& body) {
+    this->body = body;
+}
+
+void Response::setHeader(const std::string& key, const std::string& value) {
+    headers[key] = value;
+}
+
+Response Response::fromFile(const std::string& code, const std::string& message, const std::string& filename) {
+    Response ret(code);
     char buf[4096];
     int r;
     int fd = open(filename.c_str(), O_RDONLY);
 
+    ret.message = message;
     while ((r = read(fd, buf, 4096)))
         ret.body.append(buf, r);
     close(fd);
@@ -46,9 +62,10 @@ Response Response::fromFile(const std::string& code, const std::string& filename
     return ret;
 }
 
-Response Response::fromString(const std::string& code, const std::string& body) {
+Response Response::fromString(const std::string& code, const std::string& message, const std::string& body) {
     Response ret(code);
 
+    ret.message = message;
     ret.body = body;
     ret.headers["Content-Length"] = std::to_string(ret.body.length());
     return ret;

@@ -8,9 +8,9 @@
 
 class Response {
     std::string code;
+    std::string message;
     std::string body;
     std::map<std::string, std::string> headers;
-
 
 public:
     Response();
@@ -20,9 +20,13 @@ public:
     Response &operator=(const Response& r);
     ~Response();
 
-    static Response fromFile(const std::string& code, const std::string& filename);
-    static Response fromString(const std::string& code, const std::string& body);
+    static Response fromFile(const std::string& code, const std::string& message, const std::string& filename);
+    static Response fromString(const std::string& code, const std::string& message, const std::string& body);
     std::string getData() const;
+    void setCode(const std::string& code);
+    void setMessage(const std::string& message);
+    void setBody(const std::string& body);
+    void setHeader(const std::string& key, const std::string& value);
 };
 
 #endif

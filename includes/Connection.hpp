@@ -32,11 +32,13 @@ public:
 
     int getSocket() const;
     const Request& getRequest() const;
+    struct sockaddr_in getSockAddr() const;
     void readData();
     void writeData();
     bool isOpen() const;
     bool reqReady() const;
     bool resReady() const;
+    void addResponse(const Response& r);
 };
 
 #endif
