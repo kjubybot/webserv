@@ -20,6 +20,7 @@ class Server {
     std::list<int> sockets;
     std::list<Connection*> connections;
     std::list<Host> hosts;
+    int maxfd;
 
     Server(const Server &);
     Server &operator=(const Server &);

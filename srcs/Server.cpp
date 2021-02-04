@@ -1,6 +1,8 @@
 #include "Server.hpp"
 
-Server::Server() {}
+Server::Server() {
+    maxfd = 0;
+}
 
 Server::~Server() {
     for (std::list<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it) {
@@ -133,6 +135,7 @@ bool Server::makeSockets() {
             return false;
         }
         sockets.push_back(sock);
+        maxfd = std::max(maxfd, sock);
         setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &soReuse, sizeof(soReuse));
         if (bind(sock, (struct sockaddr *)&(*i), sizeof(*i))) {
             std::cerr << "Unable to bind socket: " << strerror(errno) << std::endl;
@@ -171,21 +174,25 @@ void Server::startServer() {
                 connections.erase(it);
             }
         }
-        if (select(100, &rfds, &wfds, 0, 0) > 0) {
+        if (select(maxfd + 1, &rfds, &wfds, 0, 0) > 0) {
             for (std::list<int>::iterator it = sockets.begin(); it != sockets.end(); ++it) {
                 if (FD_ISSET(*it, &rfds)) {
                     int newSock = accept(*it, (struct sockaddr *) &sockAddr, &sockLen);
                     if (newSock < 0)
                         std::cerr << "Unable too create connection: " << strerror(errno) << std::endl;
-                    else
+                    else {
                         connections.push_back(new Connection(newSock, sockAddr));
+                        maxfd = std::max(maxfd, newSock);
+                    }
                 }
             }
             for (std::list<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it) {
                 if (FD_ISSET((*it)->getSocket(), &rfds))
                     (*it)->readData();
-                if ((*it)->reqReady())
+                if ((*it)->reqReady()) {
                     (*it)->addResponse(matchHost(**it, (*it)->getRequest()).processRequest((*it)->getRequest()));
+                    (*it)->popRequest();
+                }
                 if (FD_ISSET((*it)->getSocket(), &wfds))
                     (*it)->writeData();
             }

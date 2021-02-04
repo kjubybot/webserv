@@ -68,10 +68,12 @@ void Host::setErrorPages(const std::map<std::string, std::string> errorPages) {
 }
 
 Response Host::processRequest(const Request&) const {
-    Response ret;
+    Response ret("200");
 //    std::string fullPath;
 //    struct stat fStat;
 
+    if (autoindex)
+        ;
     /* if (r.hasError())
      *     return makeError(r.getErrorCode(), r.getErrorMessage());
      * fullPath = root + r.getUri();

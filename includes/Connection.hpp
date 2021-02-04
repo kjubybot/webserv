@@ -32,6 +32,7 @@ public:
 
     int getSocket() const;
     const Request& getRequest() const;
+    void popRequest();
     struct sockaddr_in getSockAddr() const;
     void readData();
     void writeData();

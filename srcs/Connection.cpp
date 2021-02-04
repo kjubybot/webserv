@@ -16,6 +16,10 @@ const Request& Connection::getRequest() const {
     return requests.front();
 }
 
+void Connection::popRequest() {
+    requests.pop();
+}
+
 struct sockaddr_in Connection::getSockAddr() const {
     return sockAddr;
 }
@@ -31,9 +35,6 @@ void Connection::readData() {
         try {
             requests.back().parse(data);
         } catch (const HttpErrorException& ex) {
-            requests.pop();
-            HttpErrorPage rp(ex.getCode(), ex.getDescription());
-            responses.push(Response::fromString(ex.getCode(), rp.createPage()));
             _isOpen = false;
         }
     } else
@@ -51,6 +52,8 @@ bool Connection::isOpen() const {
 }
 
 bool Connection::reqReady() const {
+    if (requests.empty())
+        return false;
     return requests.front().isReady();
 }
 

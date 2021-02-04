@@ -79,5 +79,5 @@ void	Request::parseFirstLine(std::string const &line) {
 }
 
 bool Request::isReady() const {
-    return false;
+    return true;
 }
