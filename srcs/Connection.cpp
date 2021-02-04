@@ -1,13 +1,7 @@
-#include <cstdlib>
-#include <iostream>
-#include <unistd.h>
 #include "Connection.hpp"
-#include "HttpErrorException.hpp"
-#include "HttpErrorPage.hpp"
-#include "util.hpp"
 
 Connection::Connection(int sock, struct sockaddr_in sockAddr) : sock(sock), sockAddr(sockAddr), _isOpen(true) {
-    std::cout << iptoa(sockAddr.sin_addr.s_addr) << std::endl;
+    std::cout << "Connection from " << iptoa(sockAddr.sin_addr.s_addr) << std::endl;
 }
 
 Connection::~Connection() {
@@ -18,16 +12,30 @@ int Connection::getSocket() const {
     return sock;
 }
 
+const Request& Connection::getRequest() const {
+    return requests.front();
+}
+
+void Connection::popRequest() {
+    requests.pop();
+}
+
+struct sockaddr_in Connection::getSockAddr() const {
+    return sockAddr;
+}
+
 void Connection::readData() {
     char buf[4096];
     int r = read(sock, buf, 4096);
     if (r > 0) {
         data.append(buf, r);
+        std::cout << data << std::endl;
+        if (requests.empty() || requests.back().isFinishBody())
+            requests.push(Request());
         try {
-            request.parse(data);
-        } catch (HttpErrorException& ex) {
-            std::cout << "EXC" << std::endl;
-            data = HttpErrorPage(ex.getCode(), ex.getDescription()).createPage();
+            std::cout << requests.back().isFinishBody() << std::endl;
+            requests.back().parse(data);
+        } catch (const HttpErrorException& ex) {
             _isOpen = false;
         }
     } else
@@ -35,12 +43,25 @@ void Connection::readData() {
 }
 
 void Connection::writeData() {
-    if (data.length() > 0) {
-        write(sock, data.data(), data.length());
-        data.clear();
-    }
+    std::string resData = responses.front().getData();
+    write(sock, resData.data(), resData.length());
+    responses.pop();
 }
 
 bool Connection::isOpen() const {
     return _isOpen;
+}
+
+bool Connection::reqReady() const {
+    if (requests.empty())
+        return false;
+    return requests.front().isFinishBody();
+}
+
+bool Connection::resReady() const {
+    return !responses.empty();
+}
+
+void Connection::addResponse(const Response& r) {
+    responses.push(r);
 }

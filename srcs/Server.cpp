@@ -1,22 +1,14 @@
-#include <arpa/inet.h>
-#include <errno.h>
-#include <cstring>
-#include <fcntl.h>
-#include <iostream>
-#include <netinet/in.h>
-#include <sys/select.h>
-#include <sys/socket.h>
-#include <unistd.h>
 #include "Server.hpp"
-#include "util.hpp"
 
-Server::Server() {}
+Server::Server() {
+    maxfd = 0;
+}
 
 Server::~Server() {
-    for (std::list<int>::iterator it = sockets.begin(); it != sockets.end(); ++it)
-        close(*it);
-    for (std::list<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it)
+    for (std::list<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it) {
+        close((*it)->getSocket());
         delete *it;
+    }
 }
 
 bool Server::parseConfig(const std::string &filename) {
@@ -41,9 +33,33 @@ bool Server::parseConfig(const std::string &filename) {
     return true;
 }
 
+Host Server::matchHost(const Connection& conn, const Request& r) {
+    std::map<std::string, std::string> headers = r.getHeaders();
+    std::list<Host> filteredHosts;
+    struct sockaddr_in hostAddr, connAddr;
+
+    getsockname(conn.getSocket(), (struct sockaddr *) &connAddr, 0);
+    for (std::list<Host>::const_iterator it = hosts.begin(); it != hosts.end(); ++it) {
+        hostAddr = it->getSockAddr();
+        if (connAddr.sin_port == hostAddr.sin_port &&
+            (hostAddr.sin_addr.s_addr == connAddr.sin_addr.s_addr || hostAddr.sin_addr.s_addr == 0))
+            filteredHosts.push_back(*it);
+    }
+    if (headers.find("host") != headers.end()) {
+        std::string hostname = headers[std::string("host")];
+        for (std::list<Host>::const_iterator it = filteredHosts.begin(); it != filteredHosts.end(); ++it) {
+                if (it->getName() == hostname)
+                    return *it;
+        }
+    }
+    return filteredHosts.front();
+
+}
+
 Host Server::parseHost(int fd) {
     std::string line, name;
     std::vector<std::string> items;
+    std::map<std::string, std::string> error_pages;
     struct sockaddr_in sockAddr;
 
     sockAddr.sin_family = AF_INET;
@@ -71,6 +87,11 @@ Host Server::parseHost(int fd) {
                 sockAddr.sin_addr.s_addr = inet_addr(items[0].c_str());
                 sockAddr.sin_port = std::stoi(items[1]);
             }
+        } else if (items[0] == "error_page") {
+            if (items.size() < 3)
+                throw "incomplete error_page directive";
+            for (size_t i = 1; i < items.size() - 1; ++i)
+                error_pages[items[i]] = items[items.size() - 1];
         }
     }
     sockAddr.sin_port = (sockAddr.sin_port >> 8) | (sockAddr.sin_port << 8);
@@ -80,7 +101,7 @@ Host Server::parseHost(int fd) {
 bool Server::makeSockets() {
     std::list<struct sockaddr_in> sockAddrs;
     std::list<struct sockaddr_in>::iterator i, j;
-    int sock;
+    int sock, soReuse;
 
     for (std::list<Host>::iterator it = hosts.begin(); it != hosts.end(); ++it)
         sockAddrs.push_back(it->getSockAddr());
@@ -106,6 +127,7 @@ bool Server::makeSockets() {
         ++i;
     }
     i = sockAddrs.begin();
+    soReuse = 1;
     while (i != sockAddrs.end()) {
         sock = socket(AF_INET, SOCK_STREAM, 0);
         if (sock < 0) {
@@ -113,6 +135,8 @@ bool Server::makeSockets() {
             return false;
         }
         sockets.push_back(sock);
+        maxfd = std::max(maxfd, sock);
+        setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &soReuse, sizeof(soReuse));
         if (bind(sock, (struct sockaddr *)&(*i), sizeof(*i))) {
             std::cerr << "Unable to bind socket: " << strerror(errno) << std::endl;
             return false;
@@ -141,27 +165,34 @@ void Server::startServer() {
         for (std::list<int>::iterator it = sockets.begin(); it != sockets.end(); ++it)
             FD_SET(*it, &rfds);
         for (std::list<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it) {
+            if ((*it)->resReady())
+                FD_SET((*it)->getSocket(), &wfds);
             if ((*it)->isOpen()) {
                 FD_SET((*it)->getSocket(), &rfds);
-                FD_SET((*it)->getSocket(), &wfds);
-            } else {
+            } else if (!(*it)->resReady()){
                 delete *it;
                 connections.erase(it);
             }
         }
-        if (select(100, &rfds, &wfds, 0, 0) > 0) {
+        if (select(maxfd + 1, &rfds, &wfds, 0, 0) > 0) {
             for (std::list<int>::iterator it = sockets.begin(); it != sockets.end(); ++it) {
                 if (FD_ISSET(*it, &rfds)) {
                     int newSock = accept(*it, (struct sockaddr *) &sockAddr, &sockLen);
                     if (newSock < 0)
                         std::cerr << "Unable too create connection: " << strerror(errno) << std::endl;
-                    else
+                    else {
                         connections.push_back(new Connection(newSock, sockAddr));
+                        maxfd = std::max(maxfd, newSock);
+                    }
                 }
             }
             for (std::list<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it) {
                 if (FD_ISSET((*it)->getSocket(), &rfds))
                     (*it)->readData();
+                if ((*it)->reqReady()) {
+                    (*it)->addResponse(matchHost(**it, (*it)->getRequest()).processRequest((*it)->getRequest()));
+                    (*it)->popRequest();
+                }
                 if (FD_ISSET((*it)->getSocket(), &wfds))
                     (*it)->writeData();
             }

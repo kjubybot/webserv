@@ -21,12 +21,12 @@ int get_next_line(int fd, std::string& line) {
 std::string trim(const std::string& s) {
     size_t pos, len;
     pos = 0;
-    while (pos < s.length() && (s[pos] == '\n' || (s[pos] >= 9 && s[pos] <= 13)))
+    while (pos < s.length() && isspace(s[pos]))
         ++pos;
     if (pos == s.length())
         return std::string();
-    len = pos + 1;
-    while (len < s.length() && (s[len] != '\n' && !(s[len] >= 9 && s[len] <= 13)))
+    len = 0;
+    while (len + pos < s.length() && !isspace(s[len + pos]))
         ++len;
     return s.substr(pos, len);
 }
@@ -59,4 +59,46 @@ std::string iptoa(uint32_t addr) {
     ret.append(".");
     ret.append(std::to_string(addr >> 24));
     return ret;
+}
+
+std::string getFileContent(const std::string& filename)
+{
+	int fd = open(filename.c_str(), O_RDONLY);
+	std::string result;
+	std::string tmp;
+	while (get_next_line(fd, tmp))
+		result += tmp + "\n";
+	if (tmp != "")
+		result += tmp;
+	return (result);
+}
+
+char* stringDup(const std::string& str)
+{
+	char* result = new char[str.size() + 1];
+	size_t i = -1;
+	while (str[++i] != '\0')
+		result[i] = str[i];
+	result[i] = '\0';
+	return (result);
+}
+
+void freeMatrix(char** matrix)
+{
+	if (!matrix)
+		return ;
+	size_t i = -1;
+	while (matrix[++i] != NULL)
+		delete matrix[i];
+	delete matrix;
+}
+
+std::string skipWS(const std::string &str)
+{
+	std::string result(str);
+	result.erase(0, result.find_first_not_of(' '));
+	result.erase(result.find_last_not_of(' ') + 1);
+	result.erase(0, result.find_first_not_of('\t'));
+	result.erase(result.find_last_not_of('\t') + 1);
+	return (result);
 }

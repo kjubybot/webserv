@@ -56,12 +56,5 @@ HttpErrorPage::HttpErrorPage(const std::string& code, const std::string& descrip
 HttpErrorPage::~HttpErrorPage()
 { }
 
-std::string HttpErrorPage::createPage()
-{
-	std::string filename = "Page" + this->_code + ".html";
-	int fd = open(filename.c_str(), O_WRONLY | O_CREAT,
-		S_IRWXU | S_IRGRP | S_IROTH);
-	write(fd, this->_content.c_str(), this->_content.size());
-	close(fd);
-	return (_content);
-}
+const std::string& HttpErrorPage::createPage() const
+{ return (this->_content); }
