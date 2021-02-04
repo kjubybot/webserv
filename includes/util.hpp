@@ -17,5 +17,6 @@ std::string iptoa(uint32_t addr);
 std::string getFileContent(const std::string& filename);
 char* stringDup(const std::string& str);
 void freeMatrix(char** matrix);
+std::string skipWS(const std::string &str);
 
 #endif

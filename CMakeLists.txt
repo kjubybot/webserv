@@ -14,4 +14,6 @@ add_executable(webserv
         srcs/Request.cpp
         srcs/HttpErrorPage.cpp
         srcs/HttpErrorException.cpp
-        srcs/CGI.cpp)
+        srcs/CGI.cpp
+        srcs/Config.cpp)
+

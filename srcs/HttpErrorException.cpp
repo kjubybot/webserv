@@ -1,8 +1,10 @@
 #include "HttpErrorException.hpp"
 
-HttpErrorException::HttpErrorException(const std::string& code, const std::string& description)
+HttpErrorException::HttpErrorException(const std::string& code, const std::string& description,  const Request& request)
 	: _code(code), _description(description)
-{ }
+{
+	request.addError(code, description);
+}
 
 HttpErrorException::~HttpErrorException() throw()
 { }

@@ -92,3 +92,13 @@ void freeMatrix(char** matrix)
 		delete matrix[i];
 	delete matrix;
 }
+
+std::string skipWS(const std::string &str)
+{
+	std::string result(str);
+	result.erase(0, result.find_first_not_of(' '));
+	result.erase(result.find_last_not_of(' ') + 1);
+	result.erase(0, result.find_first_not_of('\t'));
+	result.erase(result.find_last_not_of('\t') + 1);
+	return (result);
+}
