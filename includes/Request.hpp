@@ -12,19 +12,25 @@ class Request {
 private:
 	bool firstLine;
 	bool firstPart;
+	bool finishBody;
+	bool flagError;
+	int remainder;
 	int contentLen;
 	int transferLen;
 
-
-	std::string method;
 	std::string path;
+	std::string method;
+	std::string content;
 	std::string htmlPage;
 
 	std::map<std::string, std::string> headers;
+	std::map<std::string, std::string> error;
 
+	void addError(std::string errorKey, std::string errorValue);
 	void parseSecondPart(std::string &line);
 	void parseFirstLine(std::string const &arr);
 	void addElemInMap(std::string &key, std::string &value);
+
 public:
 	Request();
 	virtual ~Request();
@@ -38,8 +44,11 @@ public:
 	const std::string &getHtmlPage() const;
 	const std::map<std::string, std::string> &getHeaders() const;
 
-	void resetRequest();
 	void parse(std::string &line);
+
+	bool isFinishBody() const;
+
+	bool isFlagError() const;
 
 };
 

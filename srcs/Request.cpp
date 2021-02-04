@@ -3,7 +3,7 @@
 //#define PRINT(x) { std::cout << x << std::endl; };
 // Public methods
 
-Request::Request() : firstLine(false), firstPart(false), contentLen(0) {}
+Request::Request() : firstLine(false), firstPart(false), finishBody(false), flagError(false), contentLen(0) {}
 
 void Request::setPath(const std::string &path) {
 	Request::path = path;
@@ -29,55 +29,53 @@ const std::string &Request::getMethod() const {
 	return method;
 }
 
+bool Request::isFinishBody() const {
+	return finishBody;
+}
+
 const std::map<std::string, std::string> &Request::getHeaders() const {
 	return headers;
 }
 
 void Request::parse(std::string &line) {
-	if (!firstPart)
-	{
+	if (!firstPart) {
 		size_t newLine = line.find('\n');
 		std::string copyLine = line.substr(0, newLine);
 		line.erase(0, newLine + 1);
-		if (copyLine.empty() && headers.count("host") == 1)
-		{
+		if (copyLine.empty() && headers.count("host") == 1) {
 			std::cout << "End parsing 1st part" << std::endl; // parse second part
 			firstPart = true;
 			return;
 		}
-		while (newLine != std::string::npos)
-		{
+		while (newLine != std::string::npos) {
 			if (!firstLine) {
 				Request::parseFirstLine(copyLine);
 			}
-			else if (firstLine)
-			{
+			else if (firstLine) {
 				size_t colon = copyLine.find(':');
-				if ((colon != std::string::npos) && (copyLine[0] != ' ') && (copyLine[colon - 1] != ' '))
-				{
+				if ((colon != std::string::npos) && (copyLine[0] != ' ') && (copyLine[colon - 1] != ' ')) {
 					std::string key = copyLine.substr(0, colon);
 					copyLine.erase(0, colon + 1);
 					copyLine.erase(0, copyLine.find_first_not_of(' '));
 					copyLine.erase(copyLine.find_last_not_of(' ') + 1);
 					std::string value = copyLine;
 					std::transform(key.begin(), key.end(), key.begin(), ::tolower);
-					if (key == "content-length")
-					{
+					if (key == "content-length") {
 						contentLen = std::stoi(value);
 					}
-					if (contentLen && method == "GET")
-					{
+					if (contentLen && method == "GET") {
+						addError("400", "Bad request");
 						throw HttpErrorException("400", "Bad request");
 					}
 					addElemInMap(key, value);
 				}
-				else if (colon != std::string::npos)
-				{
+				else if (colon != std::string::npos) {
+					addError("400", "Bad request");
 					throw HttpErrorException("400", "Bad request");
 				}
 			}
-			else
-			{
+			else {
+				addError("400", "Bad request");
 				throw HttpErrorException("400", "Bad request");
 			}
 			newLine = line.find('\n');
@@ -97,12 +95,12 @@ void Request::parse(std::string &line) {
 
 }
 
-void Request::resetRequest() {
+Request::~Request() {
 	headers.clear();
 }
 
-Request::~Request() {
-	headers.clear();
+bool Request::isFlagError() const {
+	return flagError;
 }
 
 // Private methods
@@ -112,23 +110,67 @@ void Request::parseSecondPart(std::string &line) {
 		// return;
 
 	// if : Content-Len && POST - need limit size read
+	if (contentLen > 0 && headers.count("transfer-encoding") == 0) {
+		content += line;
+		content.erase(contentLen + 1);
+		line.erase(0, contentLen);
+		finishBody = true;
+		return;
+	}
+
+
 	// if : Transfer-Encoding and == chunked, read len symbols
-	if (headers.count("transfer-encoding") == 1 && headers["transfer-encoding"] == "chunked") {
-
+	if (headers.count("transfer-encoding") == 1) {
+		if (headers["transfer-encoding"] == "chunked") {
+			if (transferLen == 0 && remainder == 0) {
+				transferLen = std::stoi(line, 0, 16);
+				if (transferLen == 0) {
+					finishBody = true;
+					return ;
+				}
+			}
+			else {
+				if (remainder > 0) {
+					if (line.length() > remainder) {
+						line.erase(remainder + 1);
+//						content += line.substr(0, remainder);
+						remainder = 0;
+					}
+					else {
+						remainder -= line.length();
+					}
+					content += line;
+				}
+				else {
+					if (line.length() < transferLen) {
+						remainder = transferLen - line.length();
+					}
+					else { // line.length() > transferLen
+						line.erase(transferLen);
+					}
+					content += line;
+					transferLen = 0;
+				}
+			}
+		}
+		else {
+			addError("501", "Not Implemented");
+			throw HttpErrorException("501", "Not Implemented");
+		}
 	}
-	else {
-		throw HttpErrorException("501", "Not Implemented");
-	}
+}
 
-
-
-
+void Request::addError(std::string errorKey, std::string errorValue) {
+	flagError = true;
+	error.insert(std::pair<std::string, std::string>(errorKey, errorValue));
 }
 
 void Request::addElemInMap(std::string &key, std::string &value) {
 
-	if (headers.count(key) == 1)
+	if (headers.count(key) == 1) {
+		addError("400", "Bad request");
 		throw HttpErrorException("400", "Bad request");
+	}
 	else
 		headers.insert(std::pair<std::string, std::string>(key, value));
 }
@@ -136,13 +178,17 @@ void Request::addElemInMap(std::string &key, std::string &value) {
 void	Request::parseFirstLine(std::string const &line) {
 	std::vector<std::string> arr = split(line, " ");
 	firstLine = true;
-	if (arr.size() == 3) {
-		if ((arr[0] != "GET") and (arr[0] != "POST") and (arr[0] != "PUT") and (arr[0] != "HEAD") and arr[2] != "HTTP/1.1")
+	if (arr.size() == 3)
+	{
+		if ((arr[0] != "GET") and (arr[0] != "POST") and (arr[0] != "PUT") and (arr[0] != "HEAD") and arr[2] != "HTTP/1.1") {
+			addError("400", "Bad request");
 			throw HttpErrorException("400", "Bad request");
+		}
 		Request::setMethod(arr[0]);
 		Request::setPath(arr[1]);
 	}
 	else {
+		addError("400", "Bad request");
         throw HttpErrorException("400", "Bad request");
 	}
 }
