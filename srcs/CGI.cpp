@@ -40,7 +40,7 @@ std::string CGI::executeCGI()
 		throw std::runtime_error("fork fails");
 	}
 	else if (pid > 0) {
-		int status = 0;
+		status = 0;
 		// write(fd[1], content, content-length); ???
 		// close(fd[1]); ???
 		waitpid(pid, &status, 0);
@@ -82,7 +82,7 @@ std::string CGI::executeBaseCGI()
 		throw std::runtime_error("fork fails");
 	}
 	else if (pid > 0) {
-		int status = 0;
+		status = 0;
 		write(fd[1], "hello there", 11);
 		close(fd[1]);
 		waitpid(pid, &status, 0);

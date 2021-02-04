@@ -26,24 +26,22 @@ private:
 	std::map<std::string, std::string> headers;
 	std::map<std::string, std::string> error;
 
-	void addError(std::string errorKey, std::string errorValue);
 	void parseSecondPart(std::string &line);
-	void parseFirstLine(std::string const &arr);
-	void addElemInMap(std::string &key, std::string &value);
-
+    void parseFirstLine(std::string const &arr);
+    void addElemInMap(std::string &key, std::string &value);
 public:
-	Request();
-	virtual ~Request();
 
+    Request();
+    virtual ~Request();
 	void setPath(const std::string &path);
-	void setMethod(const std::string &method);
-	void setHtmlPage(const std::string &htmlPage);
 
+    void setMethod(const std::string &method);
+    void setHtmlPage(const std::string &htmlPage);
 	const std::string &getPath() const;
-	const std::string &getMethod() const;
-	const std::string &getHtmlPage() const;
-	const std::map<std::string, std::string> &getHeaders() const;
 
+    const std::string &getMethod() const;
+    const std::string &getHtmlPage() const;
+    const std::map<std::string, std::string> &getHeaders() const;
 	void parse(std::string &line);
 
 	bool isFinishBody() const;
@@ -51,6 +49,8 @@ public:
 	bool isFlagError() const;
 
     const std::pair<std::string, std::string> getError() const;
+
+    void addError(std::string errorKey, std::string errorValue);
 
 };
 

@@ -70,18 +70,18 @@ void Request::parse(std::string &line) {
 					if (contentLen && method == "GET") {
 					    finishBody = true;
 						addError("400", "Bad request");
-						throw HttpErrorException("400", "Bad request");
+						throw HttpErrorException("400", "Bad request", *this);
 					}
 					addElemInMap(key, value);
 				}
 				else if (colon != std::string::npos) {
 					addError("400", "Bad request");
-					throw HttpErrorException("400", "Bad request");
+					throw HttpErrorException("400", "Bad request", *this);
 				}
 			}
 			else {
 				addError("400", "Bad request");
-				throw HttpErrorException("400", "Bad request");
+				throw HttpErrorException("400", "Bad request", *this);
 			}
 			newLine = line.find('\n');
             copyLine = line.substr(0, newLine);
@@ -160,7 +160,7 @@ void Request::parseSecondPart(std::string &line) {
 		}
 		else {
 			addError("501", "Not Implemented");
-			throw HttpErrorException("501", "Not Implemented");
+			throw HttpErrorException("501", "Not Implemented", *this);
 		}
 	} else
 	    finishBody = true;
@@ -175,7 +175,7 @@ void Request::addElemInMap(std::string &key, std::string &value) {
 
 	if (headers.count(key) == 1) {
 		addError("400", "Bad request");
-		throw HttpErrorException("400", "Bad request");
+		throw HttpErrorException("400", "Bad request", *this);
 	}
 	else
 		headers.insert(std::pair<std::string, std::string>(key, value));
@@ -188,13 +188,13 @@ void	Request::parseFirstLine(std::string const &line) {
 	{
 		if ((arr[0] != "GET") and (arr[0] != "POST") and (arr[0] != "PUT") and (arr[0] != "HEAD") and arr[2] != "HTTP/1.1") {
 			addError("400", "Bad request");
-			throw HttpErrorException("400", "Bad request");
+			throw HttpErrorException("400", "Bad request", *this);
 		}
 		Request::setMethod(arr[0]);
 		Request::setPath(arr[1]);
 	}
 	else {
 		addError("400", "Bad request");
-        throw HttpErrorException("400", "Bad request");
+        throw HttpErrorException("400", "Bad request", *this);
 	}
 }
