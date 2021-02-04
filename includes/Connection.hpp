@@ -3,6 +3,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <list>
 #include <netinet/in.h>
 #include <queue>
 #include <string>
@@ -11,6 +12,7 @@
 #include "Connection.hpp"
 #include "HttpErrorException.hpp"
 #include "HttpErrorPage.hpp"
+#include "Host.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
 #include "util.hpp"
@@ -19,6 +21,7 @@ class Connection {
     int sock;
     struct sockaddr_in sockAddr;
     bool _isOpen;
+    std::list<Host> hosts;
     std::string data;
     std::queue<Request> requests;
     std::queue<Response> responses;
@@ -26,8 +29,9 @@ class Connection {
     Connection();
     Connection(const Connection &);
     Connection &operator=(const Connection &);
+    Host& matchHost(const Request& request);
 public:
-    Connection(int sock, struct sockaddr_in sockAddr);
+    Connection(int sock, struct sockaddr_in sockAddr, std::list<Host> hosts);
     ~Connection();
 
     int getSocket() const;
@@ -39,7 +43,7 @@ public:
     bool isOpen() const;
     bool reqReady() const;
     bool resReady() const;
-    void addResponse(const Response& r);
+    void routeRequests();
 };
 
 #endif

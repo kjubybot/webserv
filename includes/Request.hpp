@@ -1,6 +1,7 @@
 #ifndef REQUEST_HPP
 #define REQUEST_HPP
 
+#include <algorithm>
 #include <iostream>
 #include <map>
 #include <vector>
@@ -10,9 +11,8 @@
 
 class Request {
 private:
-	bool firstLine;
 	bool firstPart;
-	bool finishBody;
+	bool secondPart;
 	bool flagError;
 	size_t remainder;
 	int contentLen;
@@ -24,11 +24,8 @@ private:
 	std::string htmlPage;
 
 	std::map<std::string, std::string> headers;
-	std::map<std::string, std::string> error;
+	std::pair<std::string, std::string> error;
 
-	void parseSecondPart(std::string &line);
-    void parseFirstLine(std::string const &arr);
-    void addElemInMap(std::string &key, std::string &value);
 public:
 
     Request();
@@ -42,15 +39,18 @@ public:
     const std::string &getMethod() const;
     const std::string &getHtmlPage() const;
     const std::map<std::string, std::string> &getHeaders() const;
-	void parse(std::string &line);
+	void parseFirst(std::string &line);
+	void parseSecond(std::string& line);
 
-	bool isFinishBody() const;
+    bool isFirstPart() const;
 
-	bool isFlagError() const;
+    bool isFlagError() const;
 
     const std::pair<std::string, std::string> getError() const;
 
     void addError(std::string errorKey, std::string errorValue);
+
+    bool isSecondPart() const;
 
 };
 

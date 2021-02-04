@@ -1,6 +1,7 @@
 #include "Connection.hpp"
 
-Connection::Connection(int sock, struct sockaddr_in sockAddr) : sock(sock), sockAddr(sockAddr), _isOpen(true) {
+Connection::Connection(int sock, struct sockaddr_in sockAddr, std::list<Host> hosts)
+        : sock(sock), sockAddr(sockAddr), _isOpen(true), hosts(hosts) {
     std::cout << "Connection from " << iptoa(sockAddr.sin_addr.s_addr) << std::endl;
 }
 
@@ -29,14 +30,17 @@ void Connection::readData() {
     int r = read(sock, buf, 4096);
     if (r > 0) {
         data.append(buf, r);
-        std::cout << data << std::endl;
-        if (requests.empty() || requests.back().isFinishBody())
-            requests.push(Request());
-        try {
-            std::cout << requests.back().isFinishBody() << std::endl;
-            requests.back().parse(data);
-        } catch (const HttpErrorException& ex) {
-            _isOpen = false;
+        while (data.find("\r\n\r\n") != std::string::npos) {
+            if (requests.empty() || requests.back().isSecondPart())
+                requests.push(Request());
+            if (!requests.back().isFirstPart())
+                requests.back().parseFirst(data);
+            if (!requests.back().isSecondPart())
+                requests.back().parseSecond(data);
+            if (requests.back().isFlagError()) {
+                _isOpen = false;
+                return;
+            }
         }
     } else
         _isOpen = false;
@@ -55,13 +59,27 @@ bool Connection::isOpen() const {
 bool Connection::reqReady() const {
     if (requests.empty())
         return false;
-    return requests.front().isFinishBody();
+    return requests.front().isSecondPart();
 }
 
 bool Connection::resReady() const {
     return !responses.empty();
 }
 
-void Connection::addResponse(const Response& r) {
-    responses.push(r);
+Host& Connection::matchHost(const Request& request) {
+    std::map<std::string, std::string> headers = request.getHeaders();
+
+    if (headers.find("host") == headers.end())
+        return hosts.front();
+    for (std::list<Host>::iterator it = hosts.begin(); it != hosts.end(); ++it)
+        if (it->getName() == headers["host"])
+            return *it;
+    return hosts.front();
+}
+
+void Connection::routeRequests() {
+    while (!requests.empty() && requests.front().isSecondPart()) {
+        responses.push(matchHost(requests.front()).processRequest(requests.front()));
+        requests.pop();
+    }
 }

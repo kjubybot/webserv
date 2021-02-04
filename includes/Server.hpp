@@ -25,7 +25,7 @@ class Server {
     Server(const Server &);
     Server &operator=(const Server &);
     Host parseHost(int fd);
-    Host matchHost(const Connection& conn, const Request& r);
+    std::list<Host> filterHosts(int sock);
     bool makeSockets();
 public:
     Server();

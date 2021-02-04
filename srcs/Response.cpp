@@ -25,10 +25,10 @@ Response& Response::operator=(const Response& r) {
 Response::~Response() {}
 
 std::string Response::getData() const {
-    std::string data = "HTTP/1.1 " + code + " " + message + "\n";
+    std::string data = "HTTP/1.1 " + code + " " + message + "\r\n";
     for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
-        data.append(it->first + ": " + it->second + "\n");
-    data.append("\n");
+        data.append(it->first + ": " + it->second + "\r\n");
+    data.append("\r\n");
     data.append(body);
     return data;
 }
@@ -62,12 +62,11 @@ Response Response::fromFile(const std::string& code, const std::string& message,
     ret.headers["Content-Length"] = std::to_string(ret.body.length());
     return ret;
 }
-#include <iostream>
+
 Response Response::fromString(const std::string& code, const std::string& message, const std::string& body) {
     Response ret(code);
 
     ret.message = message;
-    std::cout << message << std::endl;
     ret.body = body;
     ret.headers["Content-Length"] = std::to_string(ret.body.length());
     return ret;

@@ -33,27 +33,19 @@ bool Server::parseConfig(const std::string &filename) {
     return true;
 }
 
-Host Server::matchHost(const Connection& conn, const Request& r) {
-    std::map<std::string, std::string> headers = r.getHeaders();
+std::list<Host> Server::filterHosts(int sock) {
     std::list<Host> filteredHosts;
     struct sockaddr_in hostAddr, connAddr;
+    socklen_t sockLen = sizeof(connAddr);
 
-    getsockname(conn.getSocket(), (struct sockaddr *) &connAddr, 0);
+    getsockname(sock, (struct sockaddr *) &connAddr, &sockLen);
     for (std::list<Host>::const_iterator it = hosts.begin(); it != hosts.end(); ++it) {
         hostAddr = it->getSockAddr();
         if (connAddr.sin_port == hostAddr.sin_port &&
             (hostAddr.sin_addr.s_addr == connAddr.sin_addr.s_addr || hostAddr.sin_addr.s_addr == 0))
             filteredHosts.push_back(*it);
     }
-    if (headers.find("host") != headers.end()) {
-        std::string hostname = headers[std::string("host")];
-        for (std::list<Host>::const_iterator it = filteredHosts.begin(); it != filteredHosts.end(); ++it) {
-                if (it->getName() == hostname)
-                    return *it;
-        }
-    }
-    return filteredHosts.front();
-
+    return filteredHosts;
 }
 
 Host Server::parseHost(int fd) {
@@ -164,15 +156,17 @@ void Server::startServer() {
 
         for (std::list<int>::iterator it = sockets.begin(); it != sockets.end(); ++it)
             FD_SET(*it, &rfds);
-        for (std::list<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it) {
+        std::list<Connection*>::iterator it = connections.begin();
+        while (it != connections.end()) {
             if ((*it)->resReady())
                 FD_SET((*it)->getSocket(), &wfds);
             if ((*it)->isOpen()) {
                 FD_SET((*it)->getSocket(), &rfds);
             } else if (!(*it)->resReady()){
                 delete *it;
-                connections.erase(it);
+                connections.erase(it--);
             }
+            ++it;
         }
         if (select(maxfd + 1, &rfds, &wfds, 0, 0) > 0) {
             for (std::list<int>::iterator it = sockets.begin(); it != sockets.end(); ++it) {
@@ -181,7 +175,8 @@ void Server::startServer() {
                     if (newSock < 0)
                         std::cerr << "Unable too create connection: " << strerror(errno) << std::endl;
                     else {
-                        connections.push_back(new Connection(newSock, sockAddr));
+                        std::list<Host> filteredHosts = filterHosts(newSock);
+                        connections.push_back(new Connection(newSock, sockAddr, filteredHosts));
                         maxfd = std::max(maxfd, newSock);
                     }
                 }
@@ -189,10 +184,7 @@ void Server::startServer() {
             for (std::list<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it) {
                 if (FD_ISSET((*it)->getSocket(), &rfds))
                     (*it)->readData();
-                if ((*it)->reqReady()) {
-                    (*it)->addResponse(matchHost(**it, (*it)->getRequest()).processRequest((*it)->getRequest()));
-                    (*it)->popRequest();
-                }
+                (*it)->routeRequests();
                 if (FD_ISSET((*it)->getSocket(), &wfds))
                     (*it)->writeData();
             }

@@ -2,15 +2,20 @@
 
 Host::Host() {}
 
-Host::Host(struct sockaddr_in sockAddr, const std::string& name) : sockAddr(sockAddr), name(name) {}
+Host::Host(struct sockaddr_in sockAddr, const std::string& name) : sockAddr(sockAddr), name(name) {
+    root = std::string(".");
+}
 
 Host::~Host() {}
 
-Host::Host(const Host& h) : sockAddr(h.sockAddr), name(h.name) {}
+Host::Host(const Host& h)
+    : sockAddr(h.sockAddr), name(h.name), root(h.root), autoindex(h.autoindex), errorPages(h.errorPages) {}
 
 Host& Host::operator=(const Host& h) {
     sockAddr = h.sockAddr;
     name = h.name;
+    root = h.root;
+    autoindex = h.autoindex;
     return *this;
 }
 
@@ -73,19 +78,18 @@ Response Host::processRequest(const Request& r) {
     struct stat fStat;
     std::map<std::string, std::string> errorMap;
 
-    if (autoindex)
-        ;
      if (r.isFlagError())
          return makeError(r.getError().first, r.getError().second);
-      fullPath = root + r.getPath();
-      if (stat(fullPath.c_str(), &fStat))
-          return makeError("404", "Not found");
-      if (fStat.st_mode & S_IFDIR) {
-          if (autoindex)
-              ret = Response::fromString("200", "OK", makeAutoindex(r.getPath()));
-          else
-              ret = makeError("403", "Forbidden");
-      } else
-          ret = Response::fromFile("200", "OK", fullPath);
+     fullPath = root + r.getPath();
+     if (stat(fullPath.c_str(), &fStat))
+         return makeError("404", "Not found");
+     if (fStat.st_mode & S_IFDIR) {
+         if (autoindex)
+             ret = Response::fromString("200", "OK", makeAutoindex(r.getPath()));
+         else
+             ret = makeError("403", "Forbidden");
+     } else
+         ret = Response::fromFile("200", "OK", fullPath);
+     std::cout << ret.getData() << std::endl;
     return ret;
 }
