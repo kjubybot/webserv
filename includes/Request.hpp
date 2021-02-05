@@ -14,9 +14,7 @@ private:
 	bool firstPart;
 	bool secondPart;
 	bool flagError;
-	size_t remainder;
 	int contentLen;
-	size_t transferLen;
 
 	std::string path;
 	std::string method;
@@ -39,6 +37,7 @@ public:
     const std::string &getMethod() const;
     const std::string &getHtmlPage() const;
     const std::map<std::string, std::string> &getHeaders() const;
+    void parse(std::string& line);
 	void parseFirst(std::string &line);
 	void parseSecond(std::string& line);
 

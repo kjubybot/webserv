@@ -28,15 +28,14 @@ struct sockaddr_in Connection::getSockAddr() const {
 void Connection::readData() {
     char buf[4096];
     int r = read(sock, buf, 4096);
+    data.append(buf, r);
     if (r > 0) {
-        data.append(buf, r);
-        while (data.find("\r\n\r\n") != std::string::npos) {
+        while (!data.empty()) {
             if (requests.empty() || requests.back().isSecondPart())
                 requests.push(Request());
-            if (!requests.back().isFirstPart())
-                requests.back().parseFirst(data);
-            if (!requests.back().isSecondPart())
-                requests.back().parseSecond(data);
+            if (!requests.back().isFirstPart() && data.find("\r\n\r\n") == std::string::npos)
+                return;
+            requests.back().parse(data);
             if (requests.back().isFlagError()) {
                 _isOpen = false;
                 return;

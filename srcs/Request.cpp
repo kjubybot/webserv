@@ -41,6 +41,18 @@ const std::map<std::string, std::string> &Request::getHeaders() const {
 	return headers;
 }
 
+void Request::parse(std::string& line) {
+    if (!firstPart) {
+        if (line.find("\r\n\r\n") == std::string::npos) {
+            addError("400", "Bad request");
+            return;
+        }
+        parseFirst(line);
+    }
+    if (!secondPart)
+        parseSecond(line);
+}
+
 void Request::parseFirst(std::string &line) {
     size_t crlf = line.find("\r\n");
     std::string l = line.substr(0, crlf);
