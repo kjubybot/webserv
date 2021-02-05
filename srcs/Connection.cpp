@@ -33,6 +33,7 @@ void Connection::readData() {
         while (!data.empty()) {
             if (requests.empty() || requests.back().isSecondPart())
                 requests.push(Request());
+
             if (!requests.back().isFirstPart() && data.find("\r\n\r\n") == std::string::npos)
                 return;
             requests.back().parse(data);
@@ -41,8 +42,15 @@ void Connection::readData() {
                 return;
             }
         }
-    } else
+    } else {
         _isOpen = false;
+        if (r == 0) {
+            if (requests.empty() || requests.back().isSecondPart())
+                requests.push(Request());
+            requests.back().parse(data);
+            return;
+        }
+    }
 }
 
 void Connection::writeData() {

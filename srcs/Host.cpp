@@ -90,6 +90,5 @@ Response Host::processRequest(const Request& r) {
              ret = makeError("403", "Forbidden");
      } else
          ret = Response::fromFile("200", "OK", fullPath);
-     std::cout << ret.getData() << std::endl;
     return ret;
 }

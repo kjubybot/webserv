@@ -24,6 +24,8 @@ private:
 	std::map<std::string, std::string> headers;
 	std::pair<std::string, std::string> error;
 
+    void parseFirst(std::string &line);
+    void parseSecond(std::string& line);
 public:
 
     Request();
@@ -38,8 +40,7 @@ public:
     const std::string &getHtmlPage() const;
     const std::map<std::string, std::string> &getHeaders() const;
     void parse(std::string& line);
-	void parseFirst(std::string &line);
-	void parseSecond(std::string& line);
+
 
     bool isFirstPart() const;
 

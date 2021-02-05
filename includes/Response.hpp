@@ -4,6 +4,8 @@
 #include <fcntl.h>
 #include <map>
 #include <string>
+#include <sys/stat.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 class Response {
@@ -12,6 +14,9 @@ class Response {
     std::string body;
     std::map<std::string, std::string> headers;
 
+    static std::string getDate();
+    static std::string getLastModified(const std::string& filename);
+    static std::string getContentType(const std::string& filename);
 public:
     Response();
     Response(const std::string& code);
@@ -22,7 +27,7 @@ public:
 
     static Response fromFile(const std::string& code, const std::string& message, const std::string& filename);
     static Response fromString(const std::string& code, const std::string& message, const std::string& body);
-    std::string getData() const;
+    std::string getData();
     void setCode(const std::string& code);
     void setMessage(const std::string& message);
     void setBody(const std::string& body);

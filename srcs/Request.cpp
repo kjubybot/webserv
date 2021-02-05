@@ -36,7 +36,6 @@ const std::string &Request::getMethod() const {
 	return method;
 }
 
-
 const std::map<std::string, std::string> &Request::getHeaders() const {
 	return headers;
 }
@@ -82,7 +81,7 @@ void Request::parseFirst(std::string &line) {
         size_t colon = l.find(":");
         if (colon != std::string::npos) {
             std::string headerName = l.substr(0, colon);
-            if (headerName[0] == ' ' || headerName[colon - 1] == ' ') {
+            if (headerName[0] == ' ' || headerName[0] == '\t' || headerName[colon - 1] == ' ' || headerName[colon - 1] == '\t') {
                 addError("400", "Bad request");
                 return;
             }
