@@ -1,6 +1,7 @@
 #ifndef REQUEST_HPP
 #define REQUEST_HPP
 
+#include <algorithm>
 #include <iostream>
 #include <map>
 #include <vector>
@@ -10,30 +11,46 @@
 
 class Request {
 private:
-	bool firstLine;
-	std::string method;
+	bool firstPart;
+	bool secondPart;
+	bool flagError;
+	int contentLen;
+
 	std::string path;
+	std::string method;
+	std::string content;
 	std::string htmlPage;
+
 	std::map<std::string, std::string> headers;
+	std::pair<std::string, std::string> error;
 
-	void parseFirstLine(std::string const &arr);
-	void addElemInMap(std::string &key, std::string &value);
-
+    void parseFirst(std::string &line);
+    void parseSecond(std::string& line);
 public:
-	Request();
 
-	virtual ~Request();
+    Request();
+    virtual ~Request();
 	void setPath(const std::string &path);
-	void setHtmlPage(const std::string &htmlPage);
 
-	void setMethod(const std::string &method);
+    void setMethod(const std::string &method);
+    void setHtmlPage(const std::string &htmlPage);
 	const std::string &getPath() const;
-	const std::string &getMethod() const;
 
-	const std::string &getHtmlPage() const;
-	void parse(std::string const &line);
+    const std::string &getMethod() const;
+    const std::string &getHtmlPage() const;
+    const std::map<std::string, std::string> &getHeaders() const;
+    void parse(std::string& line);
 
-	const std::map<std::string, std::string> &getHeaders() const;
+
+    bool isFirstPart() const;
+
+    bool isFlagError() const;
+
+    std::pair<std::string, std::string> getError() const;
+
+    void addError(std::string errorKey, std::string errorValue);
+
+    bool isSecondPart() const;
 
 };
 

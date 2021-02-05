@@ -5,6 +5,7 @@ SRC = $(addprefix srcs/,\
 	Host.cpp\
 	Connection.cpp\
 	Request.cpp\
+	Response.cpp\
 	HttpErrorPage.cpp\
 	HttpErrorException.cpp\
 	CGI.cpp\

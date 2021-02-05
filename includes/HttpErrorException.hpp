@@ -3,7 +3,8 @@
 
 #include <stdexcept>
 #include <string>
-#include "Request.hpp"
+
+class Request;
 
 class HttpErrorException : public std::exception
 {
@@ -15,7 +16,7 @@ private :
 	HttpErrorException& operator= (const HttpErrorException& ex);
 
 public :
-	explicit HttpErrorException(const std::string& code, const std::string& description, const Request& request);
+	explicit HttpErrorException(const std::string& code, const std::string& description, Request& request);
 	virtual ~HttpErrorException() throw();
 	HttpErrorException(const HttpErrorException& ex);
 
@@ -23,5 +24,7 @@ public :
 	const std::string& getCode() const;
 	const std::string& getDescription() const;
 };
+
+#include "Request.hpp"
 
 #endif
