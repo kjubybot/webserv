@@ -18,5 +18,6 @@ std::string getFileContent(const std::string& filename);
 char* stringDup(const std::string& str);
 void freeMatrix(char** matrix);
 std::string skipWS(const std::string &str);
+uint64_t pow(int num, size_t pow);
 
 #endif

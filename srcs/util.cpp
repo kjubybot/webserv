@@ -111,3 +111,13 @@ std::string skipWS(const std::string &str)
 	}
 	return (str.substr(startPos, endPos - startPos + 1));
 }
+
+uint64_t pow(int num, size_t pow)
+{
+	uint64_t result = 1;
+	while(pow > 0) {
+		result *= num;
+		pow--;
+	}
+	return (result);
+}
