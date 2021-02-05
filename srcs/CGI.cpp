@@ -1,14 +1,14 @@
 #include "CGI.hpp"
 
-CGI::CGI(const std::string& path, const std::string& source)
-	: _cgiPath(path), _cgiSource(source)
+CGI::CGI(const std::string& path, const std::string& source, Config& config)
+	: _cgiPath(path), _cgiSource(source), _config(config)
 { }
 
 CGI::~CGI()
 { }
 
 CGI::CGI(const CGI& cgi)
-	: _cgiPath(cgi._cgiPath), _cgiSource(cgi._cgiSource)
+	: _cgiPath(cgi._cgiPath), _cgiSource(cgi._cgiSource), _config(cgi._config)
 { }
 
 std::string CGI::processCGI()
@@ -20,6 +20,7 @@ std::string CGI::processCGI()
 	}
 	catch (const std::exception& ex) {
 		std::cerr << "CGI exception: " << ex.what() << std::endl;
+		// throw 500 internal error ???
 	}
 	return (result);
 }
@@ -64,48 +65,6 @@ std::string CGI::executeCGI()
 	freeMatrix(args);
 	freeMatrix(envs);
 	return (getFileContent("./cgi_response"));
-}
-
-std::string CGI::executeBaseCGI()
-{
-	int		fd[2];
-	pid_t	pid;
-	int 	exec_status = 0;
-	int		status = 0;
-	char** args = formArgs();
-	char** envs = NULL;
-
-	if (pipe(fd) < 0)
-		throw std::runtime_error("pipe fails");
-	pid = fork();
-	if (pid < 0) {
-		throw std::runtime_error("fork fails");
-	}
-	else if (pid > 0) {
-		status = 0;
-		write(fd[1], "hello there", 11);
-		close(fd[1]);
-		waitpid(pid, &status, 0);
-		if (WIFEXITED(status))
-			status = WEXITSTATUS(status);
-		std::cout << "status: " << status << std::endl;
-	}
-	else {
-		close(fd[1]);
-		int outputFd = open("./cgi_response", O_RDWR | O_CREAT | O_TRUNC,
-			S_IRWXU | S_IRGRP | S_IROTH);
-		if (dup2(fd[0], 0) < 0)
-			throw std::runtime_error("dup2 fails");
-		if (dup2(outputFd, 1) < 0)
-			throw std::runtime_error("dup2 fails");
-		exec_status = execve(this->_cgiPath.c_str(), args, envs);
-		close(outputFd);
-		close(fd[0]);
-		exit(exec_status);
-	}
-		freeMatrix(args);
-//		freeMatrix(envs);
-		return (getFileContent("./cgi_response"));
 }
 
 char** CGI::formArgs() const
