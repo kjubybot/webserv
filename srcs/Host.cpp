@@ -82,13 +82,16 @@ Response Host::processRequest(const Request& r) {
          return makeError(r.getError().first, r.getError().second);
      fullPath = root + r.getPath();
      if (stat(fullPath.c_str(), &fStat))
-         return makeError("404", "Not found");
-     if (fStat.st_mode & S_IFDIR) {
-         if (autoindex)
-             ret = Response::fromString("200", "OK", makeAutoindex(r.getPath()));
-         else
-             ret = makeError("403", "Forbidden");
+         return makeError("404", "Not Found");
+     if (r.getMethod() == "GET") {
+         if (fStat.st_mode & S_IFDIR) {
+             if (autoindex)
+                 ret = Response::fromString("200", "OK", makeAutoindex(r.getPath()));
+             else
+                 ret = makeError("403", "Forbidden");
+         } else
+             ret = Response::fromFile("200", "OK", fullPath);
      } else
-         ret = Response::fromFile("200", "OK", fullPath);
+         ret = makeError("501", "Not Implemented");
     return ret;
 }

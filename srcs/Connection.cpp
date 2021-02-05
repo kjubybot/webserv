@@ -37,6 +37,8 @@ void Connection::readData() {
             if (!requests.back().isFirstPart() && data.find("\r\n\r\n") == std::string::npos)
                 return;
             requests.back().parse(data);
+            if (!requests.back().isSecondPart())
+                return;
             if (requests.back().isFlagError()) {
                 _isOpen = false;
                 return;
@@ -48,6 +50,8 @@ void Connection::readData() {
             if (requests.empty() || requests.back().isSecondPart())
                 requests.push(Request());
             requests.back().parse(data);
+            if (!requests.back().isSecondPart())
+                requests.back().addError("400", "Bad request");
             return;
         }
     }

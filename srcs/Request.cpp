@@ -16,7 +16,7 @@ void Request::setHtmlPage(const std::string &htmlPage) {
 	Request::htmlPage = htmlPage;
 }
 
-const std::pair<std::string, std::string> Request::getError() const {
+std::pair<std::string, std::string> Request::getError() const {
     return error;
 }
 
@@ -43,7 +43,7 @@ const std::map<std::string, std::string> &Request::getHeaders() const {
 void Request::parse(std::string& line) {
     if (!firstPart) {
         if (line.find("\r\n\r\n") == std::string::npos) {
-            addError("400", "Bad request");
+            addError("400", "Bad Request");
             return;
         }
         parseFirst(line);
@@ -60,13 +60,13 @@ void Request::parseFirst(std::string &line) {
     if (arr.size() == 3)
     {
         if ((arr[0] != "GET") and (arr[0] != "POST") and (arr[0] != "PUT") and (arr[0] != "HEAD") and arr[2] != "HTTP/1.1") {
-            addError("400", "Bad request");
+            addError("400", "Bad Request");
             return;
         }
         Request::setMethod(arr[0]);
         Request::setPath(arr[1]);
     } else {
-        addError("400", "Bad request");
+        addError("400", "Bad Request");
         return;
     }
     line.erase(0, crlf + 2);
@@ -82,7 +82,7 @@ void Request::parseFirst(std::string &line) {
         if (colon != std::string::npos) {
             std::string headerName = l.substr(0, colon);
             if (headerName[0] == ' ' || headerName[0] == '\t' || headerName[colon - 1] == ' ' || headerName[colon - 1] == '\t') {
-                addError("400", "Bad request");
+                addError("400", "Bad Request");
                 return;
             }
             std::transform(headerName.begin(), headerName.end(), headerName.begin(), ::tolower);
@@ -90,7 +90,7 @@ void Request::parseFirst(std::string &line) {
             headers[headerName] = headerValue;
             if (headerName == "content-length") {
                 if (headers.count("content-length") > 1 || method == "GET") {
-                    addError("400", "Bad request");
+                    addError("400", "Bad Request");
                     return;
                 }
                 contentLen = std::stoi(headerValue);
@@ -135,14 +135,15 @@ void Request::parseSecond(std::string &line) {
         content += line.substr(0, toRead);
         line.erase(0, toRead);
         toRead = 0;
-        secondPart = true;
+        if (headers.find("transfer-encoding") == headers.end())
+            secondPart = true;
     }
-/*    std::cout << "FINISHED PARSING REQUEST" << std::endl;
-    std::cout << "Method: " << method << "; path: " << path << std::endl;
-    std::cout << "Headers: " << std::endl;
-    for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
-        std::cout << it->first << ": " << it->second << std::endl << std::endl;
-    std::cout << content << std::endl;*/
+//    std::cout << "FINISHED PARSING REQUEST" << std::endl;
+//    std::cout << "Method: " << method << "; path: " << path << std::endl;
+//    std::cout << "Headers: " << std::endl;
+//    for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
+//        std::cout << it->first << ": " << it->second << std::endl << std::endl;
+//    std::cout << content << std::endl;
 }
 //	// if (GET)
 //		// return;

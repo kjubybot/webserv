@@ -46,7 +46,7 @@ public:
 
     bool isFlagError() const;
 
-    const std::pair<std::string, std::string> getError() const;
+    std::pair<std::string, std::string> getError() const;
 
     void addError(std::string errorKey, std::string errorValue);
 
