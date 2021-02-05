@@ -4,7 +4,7 @@
 int main()
 {
 	try {
-		Config c("../1.conf");
+		Config c("../webserv.conf");
 		std::cout << "config contains: " << c.getServers().size() << " servers" << std::endl;
 		for (size_t i = 0; i < c.getServers().size(); i++) {
 			std::cout << "server " << i + 1;
