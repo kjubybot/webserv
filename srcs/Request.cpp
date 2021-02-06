@@ -66,7 +66,7 @@ void Request::parseFirst(std::string &line) {
         Request::setMethod(arr[0]);
         Request::setPath(arr[1]);
     } else {
-        addError("400", "Bad Request");
+		addError("400", "Bad Request");
         return;
     }
     line.erase(0, crlf + 2);
@@ -81,13 +81,20 @@ void Request::parseFirst(std::string &line) {
         size_t colon = l.find(":");
         if (colon != std::string::npos) {
             std::string headerName = l.substr(0, colon);
-            if (headerName[0] == ' ' || headerName[0] == '\t' || headerName[colon - 1] == ' ' || headerName[colon - 1] == '\t') {
+            // check symbols >= 9 || <= 13
+            if (checkSymbols(headerName[0]) || checkSymbols(headerName[colon - 1])) {
+            //headerName[0] == ' ' || headerName[0] == '\t' || headerName[colon - 1] == ' ' || headerName[colon - 1] == '\t') {
                 addError("400", "Bad Request");
                 return;
             }
             std::transform(headerName.begin(), headerName.end(), headerName.begin(), ::tolower);
             std::string headerValue = trim(l.substr(colon + 2));
-            headers[headerName] = headerValue;
+            headers[headerName] = headerValue; // check double header name
+            // check transfer-encoding and content-length
+            if (headers.count("content-length") == 1 && headers.count("transfer-encoding") == 1) {
+				addError("400", "Bad Request");
+				return;
+            }
             if (headerName == "content-length") {
                 if (headers.count("content-length") > 1 || method == "GET") {
                     addError("400", "Bad Request");
@@ -101,6 +108,10 @@ void Request::parseFirst(std::string &line) {
     firstPart = true;
 }
 
+int Request::checkSymbols(char sym) {
+	return ((9 <= sym && sym <= 13) || sym == ' ');
+}
+
 
 bool Request::isFlagError() const {
 	return flagError;
@@ -110,6 +121,10 @@ bool Request::isFlagError() const {
 
 void Request::parseSecond(std::string &line) {
     static size_t toRead;
+
+    if (maxBodySize < contentLen) {
+    	contentLen = maxBodySize;
+    }
 
     if (toRead == 0) {
         if (headers.find("transfer-encoding") == headers.end())
@@ -212,4 +227,14 @@ bool Request::isFirstPart() const {
 
 bool Request::isSecondPart() const {
     return secondPart;
+}
+
+int Request::getMaxBodySize() const
+{
+	return maxBodySize;
+}
+
+void Request::setMaxBodySize(int maxBodySize)
+{
+	Request::maxBodySize = maxBodySize;
 }
