@@ -1,9 +1,11 @@
 #include "Config.hpp"
 
-Config::Config(const std::string path)
+Config::Config(const std::string& path)
 	: _confPath(path)
 {
 	parseConfig();
+	if (this->_servers.empty())
+		throw std::runtime_error("error occurred in config: empty config");
 }
 
 Config::~Config()
@@ -77,6 +79,14 @@ void Config::parseServerBlock(std::vector<std::string> lines, size_t* endBlockPo
 		this->_servers.clear();
 		throw std::runtime_error("error occurred in config: line " + std::to_string(*endBlockPos + 1));
 	}
+	else {
+		if (this->_servers.back()._host == "") {
+			this->_servers.clear();
+			throw std::runtime_error("error occurred in config: line " + std::to_string(*endBlockPos + 1));
+		}
+		else if (this->_servers.back()._root == "")
+			this->_servers.back()._root = ".";
+	}
 }
 
 void Config::parseServerBlockDirectives(std::vector<std::string> line, size_t endBlockPos)
@@ -84,6 +94,7 @@ void Config::parseServerBlockDirectives(std::vector<std::string> line, size_t en
 	static std::vector<std::string> serverBlockDirectives;
 	serverBlockDirectives.push_back("server_name"); serverBlockDirectives.push_back("listen");
 	serverBlockDirectives.push_back("error_page"); serverBlockDirectives.push_back("max_body_size");
+	serverBlockDirectives.push_back("root"); serverBlockDirectives.push_back("index");
 	bool isValidDirective = false;
 
 	for(std::vector<std::string>::iterator it = serverBlockDirectives.begin(); it != serverBlockDirectives.end(); it++) {
@@ -118,17 +129,32 @@ void Config::parseServerBlockDirectives(std::vector<std::string> line, size_t en
 			}
 		}
 		else if (line[0] == "error_page") {
-			if (this->_servers.back()._errorPages.empty())
-				this->_servers.back()._errorPages.insert(this->_servers.back()._errorPages.begin(),
-					++line.begin(), line.end());
+			if (line.size() == 3 && this->_servers.back()._errorPages.count(line[1]) == 0)
+				this->_servers.back()._errorPages[line[1]] = line[2];
+			else {
+				this->_servers.clear();
+				throw std::runtime_error("error occurred in config: line " + std::to_string(endBlockPos + 1));
+			}
+		}
+		else if (line[0] == "max_body_size") {
+			if (this->_servers.back()._maxBodySize == "" && line.size() == 2 && validateMaxBodySize(line[1]))
+				this->_servers.back()._maxBodySize = line[1];
+			else {
+				this->_servers.clear();
+				throw std::runtime_error("error occurred in config: line " + std::to_string(endBlockPos + 1));
+			}
+		}
+		else if (line[0] == "root") {
+			if (line.size() == 2 && this->_servers.back()._root == "")
+				this->_servers.back()._root = line[1];
 			else {
 				this->_servers.clear();
 				throw std::runtime_error("error occurred in config: line " + std::to_string(endBlockPos + 1));
 			}
 		}
 		else {
-			if (this->_servers.back()._maxBodySize == "" && line.size() == 2 && validateMaxBodySize(line[1]))
-				this->_servers.back()._maxBodySize = line[1];
+			if (this->_servers.back()._index.empty())
+				this->_servers.back()._index.insert(this->_servers.back()._index.begin(), ++line.begin(), line.end());
 			else {
 				this->_servers.clear();
 				throw std::runtime_error("error occurred in config: line " + std::to_string(endBlockPos + 1));
@@ -337,6 +363,30 @@ bool Config::validateMaxBodySize(std::string size)
 Config::ConfigServer Config::getDefaultServer() const
 { return (this->_servers.front()); }
 
+std::vector<std::string> Config::getDefaultServerNames() const
+{ return (this->_servers.front()._names); }
+
+std::string Config::getDefaultServerIp() const
+{ return (this->_servers.front()._host); }
+
+uint16_t Config::getDefaultServerPort() const
+{ return ((uint16_t)std::stoi(this->_servers.front()._port)); }
+
+std::map<std::string, std::string> Config::getDefaultServerErrorPages() const
+{ return (this->_servers.front()._errorPages); }
+
+uint64_t Config::getDefaultServerMaxBodySize() const
+{ return (getServerMaxBodySize(0)); }
+
+std::string Config::getDefaultServerRoot() const
+{ return (this->_servers.front()._root); }
+
+std::vector<std::string> Config::getDefaultServerIndexPages() const
+{ return (this->_servers.front()._index); }
+
+std::vector<Config::ConfigServer::ConfigLocation> Config::getDefaultServerLocations() const
+{ return (this->_servers.front()._locations); }
+
 Config::ConfigServer Config::getServerById(size_t idx) const
 { return (this->_servers.at(idx)); }
 
@@ -355,7 +405,7 @@ std::string Config::getServerIp(size_t idx) const
 uint16_t Config::getServerPort(size_t idx) const
 { return ((uint16_t)std::stoi(this->_servers.at(idx)._port)); }
 
-std::vector<std::string> Config::getServerErrorPages(size_t idx) const
+std::map<std::string, std::string> Config::getServerErrorPages(size_t idx) const
 { return (this->_servers.at(idx)._errorPages); }
 
 uint64_t Config::getServerMaxBodySize(size_t idx) const
@@ -375,6 +425,12 @@ uint64_t Config::getServerMaxBodySize(size_t idx) const
 	else
 		return (UINT64_MAX);
 }
+
+std::string Config::getServerRoot(size_t idx) const
+{ return (this->_servers.at(idx)._root); }
+
+std::vector<std::string> Config::getServerIndexPages(size_t idx) const
+{ return (this->_servers.at(idx)._index); }
 
 std::vector<std::string> Config::getLocationName(size_t servIdx, size_t locIdx) const
 { return (this->_servers.at(servIdx)._locations.at(locIdx)._name); }

@@ -6,8 +6,7 @@ set(CMAKE_CXX_STANDARD 98)
 add_compile_options(-Wall -Wextra -Werror)
 include_directories(includes)
 
-add_executable(webserv
-        srcs/main.cpp
+add_executable(webserv srcs/main.cpp
         srcs/Host.cpp
         srcs/Connection.cpp
         srcs/Server.cpp
