@@ -301,6 +301,9 @@ void Config::fillLocationsDefault()
 		if (it->_root == "") {
 			it->_root = this->_servers.back()._root;
 		}
+		if (it->_index.size() == 0) {
+			it->_index = this->_servers.back()._index;
+		}
 	}
 }
 
