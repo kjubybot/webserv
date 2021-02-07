@@ -2,7 +2,7 @@
 
 // Public methods
 
-Request::Request() : firstPart(false), secondPart(false), flagError(false), contentLen(0) {}
+Request::Request() : firstPart(false), secondPart(false), flagError(false), contentLen(0), maxBodySize(0) {}
 
 Request::~Request() {
     headers.clear();
@@ -89,21 +89,21 @@ void Request::parseFirst(std::string &line) {
             }
             std::transform(headerName.begin(), headerName.end(), headerName.begin(), ::tolower);
             std::string headerValue = trim(l.substr(colon + 2));
-            headers[headerName] = headerValue; // check double header name
             // check transfer-encoding and content-length
-            if (headers.count("content-length") == 1 && headers.count("transfer-encoding") == 1) {
-				addError("400", "Bad Request");
-				return;
-            }
             if (headerName == "content-length") {
-                if (headers.count("content-length") > 1 || method == "GET") {
+                if (method == "GET" || headers.find("content-length") != headers.end()) {
                     addError("400", "Bad Request");
                     return;
                 }
                 contentLen = std::stoi(headerValue);
             }
+            headers[headerName] = headerValue; // check double header name
         }
         line.erase(0, crlf + 2);
+    }
+    if (headers.count("content-length") == 1 && headers.count("transfer-encoding") == 1) {
+        headers.erase("content-length");
+        contentLen = 0;
     }
     firstPart = true;
 }
@@ -111,7 +111,6 @@ void Request::parseFirst(std::string &line) {
 int Request::checkSymbols(char sym) {
 	return ((9 <= sym && sym <= 13) || sym == ' ');
 }
-
 
 bool Request::isFlagError() const {
 	return flagError;
@@ -123,9 +122,9 @@ void Request::parseSecond(std::string &line) {
     static size_t toRead;
 
     if (maxBodySize < contentLen) {
-    	contentLen = maxBodySize;
+        addError("413", "Request Entity Too Large");
+        return;
     }
-
     if (toRead == 0) {
         if (headers.find("transfer-encoding") == headers.end())
             toRead = contentLen;
@@ -153,12 +152,12 @@ void Request::parseSecond(std::string &line) {
         if (headers.find("transfer-encoding") == headers.end())
             secondPart = true;
     }
-//    std::cout << "FINISHED PARSING REQUEST" << std::endl;
-//    std::cout << "Method: " << method << "; path: " << path << std::endl;
-//    std::cout << "Headers: " << std::endl;
-//    for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
-//        std::cout << it->first << ": " << it->second << std::endl << std::endl;
-//    std::cout << content << std::endl;
+    std::cout << "FINISHED PARSING REQUEST" << std::endl;
+    std::cout << "Method: " << method << "; path: " << path << std::endl;
+    std::cout << "Headers: " << std::endl;
+    for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
+        std::cout << it->first << ": " << it->second << std::endl << std::endl;
+    std::cout << content << std::endl;
 }
 //	// if (GET)
 //		// return;

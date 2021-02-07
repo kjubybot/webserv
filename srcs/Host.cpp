@@ -87,19 +87,30 @@ Response Host::processRequest(const Request& r) {
 
      if (r.isFlagError())
          return makeError(r.getError().first, r.getError().second);
-     fullPath = root + r.getPath();
-     if (stat(fullPath.c_str(), &fStat))
+    fullPath = joinPath(root, r.getPath());
+    if (stat(fullPath.c_str(), &fStat))
          return makeError("404", "Not Found");
      if (r.getMethod() == "GET") {
          if (fStat.st_mode & S_IFDIR) {
-			 ret = Response::fromString("200", "OK", "");
+             if (index.size() > 0) {
+                 for (size_t i = 0; i < index.size(); ++i) {
+                     fullPath = joinPath(root, index[i]);
+                     if (stat(fullPath.c_str(), &fStat) == 0)
+                         return Response::fromFile("200", "OK", fullPath);
+                 }
+             }
+//			 return Response::fromString("200", "OK", "");
 //             if (autoindex)
 //                 ret = Response::fromString("200", "OK", makeAutoindex(r.getPath()));
 //             else
 //                 ret = makeError("403", "Forbidden");
          } else
-             ret = Response::fromFile("200", "OK", fullPath);
+             return Response::fromFile("200", "OK", fullPath);
+     } else if (r.getMethod() == "HEAD") {
+         if (fStat.st_mode & S_IFDIR)
+             return makeError("403", "Forbidden");
+         return Response::fromFileNoBody("200", "OK", fullPath);
      } else
-         ret = makeError("501", "Not Implemented");
-    return ret;
+         return makeError("501", "Not Implemented");
+    return makeError("404", "Not Found");
 }
