@@ -15,6 +15,7 @@ private:
 	bool secondPart;
 	bool flagError;
 	int contentLen;
+	int maxBodySize;
 
 	std::string path;
 	std::string method;
@@ -26,31 +27,31 @@ private:
 
     void parseFirst(std::string &line);
     void parseSecond(std::string& line);
+	int checkSymbols(char sym);
 public:
 
     Request();
     virtual ~Request();
-	void setPath(const std::string &path);
 
+	void setMaxBodySize(int maxBodySize);
+	void setPath(const std::string &path);
     void setMethod(const std::string &method);
     void setHtmlPage(const std::string &htmlPage);
-	const std::string &getPath() const;
 
+	int getMaxBodySize() const;
+	const std::string &getPath() const;
     const std::string &getMethod() const;
     const std::string &getHtmlPage() const;
+    std::pair<std::string, std::string> getError() const;
     const std::map<std::string, std::string> &getHeaders() const;
+
     void parse(std::string& line);
 
-
     bool isFirstPart() const;
-
     bool isFlagError() const;
-
-    std::pair<std::string, std::string> getError() const;
+    bool isSecondPart() const;
 
     void addError(std::string errorKey, std::string errorValue);
-
-    bool isSecondPart() const;
 
 };
 

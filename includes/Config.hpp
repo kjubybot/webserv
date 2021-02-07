@@ -24,12 +24,14 @@ private :
 			std::string 				_uploadPath;
 		}				ConfigLocation;
 
-		std::vector<std::string>	_names;
-		std::string 				_host;
-		std::string					_port;
-		std::vector<std::string>	_errorPages;
-		std::string					_maxBodySize;
-		std::vector<ConfigLocation>	_locations;
+		std::vector<std::string>			_names;
+		std::string 						_host;
+		std::string							_port;
+		std::string 						_root;
+		std::vector<std::string> 			_index;
+		std::map<std::string, std::string>	_errorPages;
+		std::string							_maxBodySize;
+		std::vector<ConfigLocation>			_locations;
 	}				ConfigServer;
 
 	std::string					_confPath;
@@ -49,19 +51,30 @@ private :
 	bool validateMaxBodySize(std::string size);
 
 public :
-	explicit Config(const std::string path);
+	explicit Config(const std::string& path);
 	~Config();
 	Config(const Config& config);
 
-	Config::ConfigServer getDefaultServer() const;
-	Config::ConfigServer getServerById(size_t idx) const;
 	const std::string& getConfigPath() const;
 	std::vector<ConfigServer> getServers() const;
+	Config::ConfigServer getDefaultServer() const;
+	std::vector<std::string> getDefaultServerNames() const;
+	std::string getDefaultServerIp() const;
+	uint16_t getDefaultServerPort() const;
+	std::map<std::string, std::string> getDefaultServerErrorPages() const;
+	uint64_t getDefaultServerMaxBodySize() const;
+	std::string getDefaultServerRoot() const;
+	std::vector<std::string> getDefaultServerIndexPages() const;
+	std::vector<ConfigServer::ConfigLocation> getDefaultServerLocations() const;
+
+	Config::ConfigServer getServerById(size_t idx) const;
 	std::vector<std::string> getServerNames(size_t idx) const;
 	std::string getServerIp(size_t idx) const;
 	uint16_t getServerPort(size_t idx) const;
-	std::vector<std::string> getServerErrorPages(size_t idx) const;
+	std::map<std::string, std::string> getServerErrorPages(size_t idx) const;
 	uint64_t getServerMaxBodySize(size_t idx) const;
+	std::string getServerRoot(size_t idx) const;
+	std::vector<std::string> getServerIndexPages(size_t idx) const;
 	std::vector<std::string> getLocationName(size_t servIdx, size_t locIdx) const;
 	std::string getLocationRoot(size_t servIdx, size_t locIdx) const;
 	std::vector<std::string> getLocationMethods(size_t servIdx, size_t locIdx) const;

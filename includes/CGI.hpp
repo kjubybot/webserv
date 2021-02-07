@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include "Config.hpp"
 #include "util.hpp"
 
 class CGI
@@ -16,8 +17,8 @@ class CGI
 private :
 	std::string _cgiPath;
 	std::string _cgiSource;
+	Config		_config;
 	// Request _request;
-	// Config _config;
 
 	CGI();
 	CGI& operator= (const CGI& cgi);
@@ -28,13 +29,11 @@ private :
 
 public :
 
-	explicit CGI(const std::string& path, const std::string& source); // Request, Config
+	explicit CGI(const std::string& path, const std::string& source, Config& config);
 	~CGI();
 	CGI(const CGI& cgi);
 
 	std::string processCGI();
-	std::string executeBaseCGI();
-
 	const std::string& getPath() const;
 	const std::string& getSource() const;
 };

@@ -121,3 +121,15 @@ uint64_t pow(int num, size_t pow)
 	}
 	return (result);
 }
+
+std::string joinPath(const std::string& a, const std::string& b) {
+    std::string ret;
+
+    if (a[a.length() - 1] == '/' && b[0] == '/')
+        ret = a.substr(0, a.length() - 1);
+    else if (a[a.length() - 1] != '/' && b[0] != '/')
+        ret = a + "/";
+    else
+        ret = a;
+    return ret + b;
+}

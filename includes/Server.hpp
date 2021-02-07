@@ -14,6 +14,7 @@
 #include "Connection.hpp"
 #include "Host.hpp"
 #include "Response.hpp"
+#include "Config.hpp"
 #include "util.hpp"
 
 class Server {
@@ -24,7 +25,7 @@ class Server {
 
     Server(const Server &);
     Server &operator=(const Server &);
-    Host parseHost(int fd);
+    Host parseHost(const Config& config);
     std::list<Host> filterHosts(int sock);
     bool makeSockets();
 public:

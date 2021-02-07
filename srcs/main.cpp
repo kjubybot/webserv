@@ -1,6 +1,7 @@
 #include <iostream>
 #include "Host.hpp"
 #include "Server.hpp"
+#include "Config.hpp"
 #include "util.hpp"
 
 int main(int argc, char **argv) {

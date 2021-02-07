@@ -19,5 +19,6 @@ char* stringDup(const std::string& str);
 void freeMatrix(char** matrix);
 std::string skipWS(const std::string &str);
 uint64_t pow(int num, size_t pow);
+std::string joinPath(const std::string& a, const std::string& b);
 
 #endif

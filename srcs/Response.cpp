@@ -116,6 +116,18 @@ Response Response::fromFile(const std::string& code, const std::string& message,
     return ret;
 }
 
+Response Response::fromFileNoBody(const std::string& code, const std::string& message, const std::string& filename) {
+    Response ret(code);
+    struct stat fStat;
+
+    stat(filename.c_str(), &fStat);
+    ret.message = message;
+    ret.headers["Content-Length"] = std::to_string(fStat.st_size);
+    ret.headers["Content-Type"] = getContentType(filename);
+    ret.headers["Last-Modified"] = getLastModified(filename);
+    return ret;
+}
+
 Response Response::fromString(const std::string& code, const std::string& message, const std::string& body) {
     Response ret(code);
 
