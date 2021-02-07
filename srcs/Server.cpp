@@ -13,8 +13,11 @@ Server::~Server() {
 
 bool Server::parseConfig(const std::string &filename) {
 	try {
-		Config config(filename);
-		hosts.push_back(parseHost(config));
+		servers = Config(filename).getServersQueue();
+		while (!servers.empty()) {
+			hosts.push_back(Host(servers.front()));
+			servers.pop();
+		}
 	}
 	catch (const std::exception& ex) {
 		std::cerr << ex.what() << std::endl;
@@ -36,19 +39,6 @@ std::list<Host> Server::filterHosts(int sock) {
             filteredHosts.push_back(*it);
     }
     return filteredHosts;
-}
-
-Host Server::parseHost(const Config& config) {
-	struct sockaddr_in sockAddr;
-
-	sockAddr.sin_family = AF_INET;
-	sockAddr.sin_port = 0;
-
-	sockAddr.sin_addr.s_addr = inet_addr(config.getServerIp(0).c_str());
-	sockAddr.sin_port = config.getServerPort(0);
-	sockAddr.sin_port = (sockAddr.sin_port >> 8) | (sockAddr.sin_port << 8);
-
-	return Host(sockAddr, config);
 }
 
 bool Server::makeSockets() {

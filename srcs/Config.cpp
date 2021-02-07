@@ -86,6 +86,8 @@ void Config::parseServerBlock(std::vector<std::string> lines, size_t* endBlockPo
 		}
 		else if (this->_servers.back()._root == "")
 			this->_servers.back()._root = ".";
+		else
+			fillLocationsDefault();
 	}
 }
 
@@ -168,7 +170,7 @@ void Config::parseLocationBlock(std::vector<std::string> lines, size_t* endBlock
 	this->_servers.back()._locations.push_back(ConfigServer::ConfigLocation());
 	std::vector<std::string> locationLine = split(lines[*endBlockPos], " ");
 	for (size_t i = 1; i < locationLine.size() - 1; i++)
-		this->_servers.back()._locations.back()._name.push_back(locationLine[i]);
+		this->_servers.back()._locations.back()._name = locationLine[1];
 	(*endBlockPos)++;
 	bool bracketOpen = true;
 	while (*endBlockPos < lines.size()) {
@@ -292,6 +294,16 @@ void Config::parseLocationBlockDirectives(std::vector<std::string> line, size_t 
 	}
 }
 
+void Config::fillLocationsDefault()
+{
+	std::vector<ConfigServer::ConfigLocation>::iterator it;
+	for (it = this->_servers.back()._locations.begin(); it != this->_servers.back()._locations.end(); it++) {
+		if (it->_root == "") {
+			it->_root = this->_servers.back()._root;
+		}
+	}
+}
+
 bool Config::validateListen(const std::string& arg)
 {
 	if (arg.find(':') == std::string::npos || arg.find_first_of(':') != arg.find_last_of(':'))
@@ -370,13 +382,13 @@ std::string Config::getDefaultServerIp() const
 { return (this->_servers.front()._host); }
 
 uint16_t Config::getDefaultServerPort() const
-{ return ((uint16_t)std::stoi(this->_servers.front()._port)); }
+{ return (this->_servers.front().getPort()); }
 
 std::map<std::string, std::string> Config::getDefaultServerErrorPages() const
 { return (this->_servers.front()._errorPages); }
 
 uint64_t Config::getDefaultServerMaxBodySize() const
-{ return (getServerMaxBodySize(0)); }
+{ return (this->_servers.front().getMaxBodySize()); }
 
 std::string Config::getDefaultServerRoot() const
 { return (this->_servers.front()._root); }
@@ -396,62 +408,73 @@ const std::string& Config::getConfigPath() const
 std::vector<Config::ConfigServer> Config::getServers() const
 { return (this->_servers); }
 
-std::vector<std::string> Config::getServerNames(size_t idx) const
-{ return (this->_servers.at(idx)._names); }
+std::vector<std::string> Config::ConfigServer::getNames() const
+{ return (this->_names); }
 
-std::string Config::getServerIp(size_t idx) const
-{ return (this->_servers.at(idx)._host); }
+std::string Config::ConfigServer::getHost() const
+{ return (this->_host); }
 
-uint16_t Config::getServerPort(size_t idx) const
-{ return ((uint16_t)std::stoi(this->_servers.at(idx)._port)); }
+uint16_t Config::ConfigServer::getPort() const
+{ return ((uint16_t)std::stoi(this->_port)); }
 
-std::map<std::string, std::string> Config::getServerErrorPages(size_t idx) const
-{ return (this->_servers.at(idx)._errorPages); }
+std::string Config::ConfigServer::getRoot() const
+{ return (this->_root); }
 
-uint64_t Config::getServerMaxBodySize(size_t idx) const
+std::vector<std::string> Config::ConfigServer::getIndexPages() const
+{ return (this->_index); }
+
+std::map<std::string, std::string> Config::ConfigServer::getErrorPages() const
+{ return (this->_errorPages); }
+
+uint64_t Config::ConfigServer::getMaxBodySize() const
 {
 	std::map<std::string, size_t> exponentAccord;
 	exponentAccord[""] = 1;
 	exponentAccord["K"] = pow(2, 10) * exponentAccord[""];
 	exponentAccord["M"] = pow(2, 10) * exponentAccord["K"];
 	exponentAccord["G"] = pow(2, 10) * exponentAccord["M"];
-	if (!(this->_servers.at(idx)._maxBodySize.empty())) {
-		int num = std::stoi(this->_servers.at(idx)._maxBodySize.substr(0,
-		this->_servers.at( idx)._maxBodySize.size() - 1));
-		uint64_t result = (uint64_t) num *
-			exponentAccord[this->_servers.at(idx)._maxBodySize.substr(this->_servers.at(idx)._maxBodySize.size() - 1)];
+	if (!(this->_maxBodySize.empty())) {
+		int num = std::stoi(this->_maxBodySize.substr(0, this->_maxBodySize.size() - 1));
+		uint64_t result = (uint64_t) num * exponentAccord[this->_maxBodySize.substr(this->_maxBodySize.size() - 1)];
 		return (result);
 	}
 	else
 		return (UINT64_MAX);
 }
 
-std::string Config::getServerRoot(size_t idx) const
-{ return (this->_servers.at(idx)._root); }
+std::vector<Config::ConfigServer::ConfigLocation> Config::ConfigServer::getLocations() const
+{ return (this->_locations); }
 
-std::vector<std::string> Config::getServerIndexPages(size_t idx) const
-{ return (this->_servers.at(idx)._index); }
 
-std::vector<std::string> Config::getLocationName(size_t servIdx, size_t locIdx) const
-{ return (this->_servers.at(servIdx)._locations.at(locIdx)._name); }
+std::string Config::ConfigServer::ConfigLocation::getName() const
+{ return (this->_name); }
 
-std::string Config::getLocationRoot(size_t servIdx, size_t locIdx) const
-{ return (this->_servers.at(servIdx)._locations.at(locIdx)._root); }
+std::string Config::ConfigServer::ConfigLocation::getRoot() const
+{ return (this->_root); }
 
-std::vector<std::string> Config::getLocationMethods(size_t servIdx, size_t locIdx) const
-{ return (this->_servers.at(servIdx)._locations.at(locIdx)._allowedMethods); }
+std::vector<std::string> Config::ConfigServer::ConfigLocation::getMethods() const
+{ return (this->_allowedMethods); }
 
-bool Config::getLocationAutoIndex(size_t servIdx, size_t locIdx) const
-{ return (this->_servers.at(servIdx)._locations.at(locIdx)._autoIndex == "on" ? true : false); }
+bool Config::ConfigServer::ConfigLocation::getAutoIndex() const
+{ return (this->_autoIndex == "on" ? true : false); }
 
-std::vector<std::string> Config::getLocationIndexPages(size_t servIdx, size_t locIdx) const
-{ return (this->_servers.at(servIdx)._locations.at(locIdx)._index); }
+std::vector<std::string> Config::ConfigServer::ConfigLocation::getIndexPages() const
+{ return (this->_index); }
 
-std::vector<std::string> Config::getLocationCGIExtensions(size_t servIdx, size_t locIdx) const
-{ return (this->_servers.at(servIdx)._locations.at(locIdx)._cgiExtensions); }
+std::vector<std::string> Config::ConfigServer::ConfigLocation::getCGIExtensions()const
+{ return (this->_cgiExtensions); }
 
-std::string Config::getLocationCGIPath(size_t servIdx, size_t locIdx) const
-{ return (this->_servers.at(servIdx)._locations.at(locIdx)._cgiPath); }
+std::string Config::ConfigServer::ConfigLocation::getCGIPath() const
+{ return (this->_cgiPath); }
 
-std::string Config::getLocationUploadPath(size_t servIdx, size_t locIdx) const
-{ return (this->_servers.at(servIdx)._locations.at(locIdx)._uploadPath); }
+std::string Config::ConfigServer::ConfigLocation::getUploadPath() const
+{ return (this->_uploadPath); }
+
+std::queue<Config::ConfigServer> Config::getServersQueue() const
+{
+	std::queue<ConfigServer> queue;
+	for (std::vector<ConfigServer>::const_iterator it = this->_servers.begin(); it != this->_servers.end(); it++) {
+		queue.push(*it);
+	}
+	return (queue);
+}

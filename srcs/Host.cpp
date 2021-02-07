@@ -1,19 +1,26 @@
 #include "Host.hpp"
 
-Host::Host(struct sockaddr_in sockAddr, const Config& config) : sockAddr(sockAddr)
+Host::Host(const Config::ConfigServer& server)
 {
-	names = config.getDefaultServerNames();
-	errorPages = config.getDefaultServerErrorPages();
-	maxBodySize = config.getDefaultServerMaxBodySize();
-	root = config.getDefaultServerRoot();
-	index = config.getDefaultServerIndexPages();
+	sockAddr.sin_family = AF_INET;
+	sockAddr.sin_port = 0;
+
+	sockAddr.sin_addr.s_addr = inet_addr(server.getHost().c_str());
+	sockAddr.sin_port = server.getPort();
+	sockAddr.sin_port = (sockAddr.sin_port >> 8) | (sockAddr.sin_port << 8);
+	names = server.getNames();
+	errorPages = server.getErrorPages();
+	maxBodySize = server.getMaxBodySize();
+	root = server.getRoot();
+	index = server.getIndexPages();
+	locations = server.getLocations();
 }
 
 Host::~Host()
 { }
 
 Host::Host(const Host& h)
-    : sockAddr(h.sockAddr), names(h.names), errorPages(h.errorPages), maxBodySize(h.maxBodySize), root(h.root), index(h.index)
+    : sockAddr(h.sockAddr), names(h.names), errorPages(h.errorPages), maxBodySize(h.maxBodySize), root(h.root), index(h.index), locations(h.locations)
 { }
 
 Host& Host::operator=(const Host& h) {
@@ -23,6 +30,7 @@ Host& Host::operator=(const Host& h) {
 	maxBodySize = h.maxBodySize;
 	root = h.root;
 	index = h.index;
+	locations = h.locations;
 	return (*this);
 }
 
@@ -63,7 +71,9 @@ struct sockaddr_in Host::getSockAddr() const {
 	return sockAddr;
 }
 
-const std::string& Host::getName() const {
+std::string Host::getName() const {
+	if (names.empty())
+		return ("");
     return names.front();
 }
 

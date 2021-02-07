@@ -7,7 +7,7 @@
 int main(int argc, char **argv) {
     std::string confFile;
     if (argc < 2) {
-        confFile = "../base.conf";
+        confFile = "../webserv.conf";
     } else {
         confFile = std::string(argv[1]);
     }
