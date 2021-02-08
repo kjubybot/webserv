@@ -22,10 +22,10 @@ class Server {
     std::list<Connection*> connections;
     std::list<Host> hosts;
     int maxfd;
+    std::queue<Config::ConfigServer> servers;
 
     Server(const Server &);
     Server &operator=(const Server &);
-    Host parseHost(const Config& config);
     std::list<Host> filterHosts(int sock);
     bool makeSockets();
 public:

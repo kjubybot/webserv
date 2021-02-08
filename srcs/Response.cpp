@@ -138,3 +138,13 @@ Response Response::fromString(const std::string& code, const std::string& messag
     ret.headers["Last-Modified"] = getLastModified("");
     return ret;
 }
+
+Response Response::fromStringNoBody(const std::string& code, const std::string& message, const std::string& body) {
+    Response ret(code);
+
+    ret.message = message;
+    ret.headers["Content-Length"] = std::to_string(body.length());
+    ret.headers["Content-Type"] = "text/html";
+    ret.headers["Last-Modified"] = getLastModified("");
+    return ret;
+}
