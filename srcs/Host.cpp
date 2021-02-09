@@ -122,9 +122,9 @@ Response Host::processRequest(const Request& r) {
     if (r.isFlagError())
         return makeError(r.getError().first, r.getError().second, realRoot);
     fullPath = joinPath(realRoot, r.getPath());
-    if (stat(fullPath.c_str(), &fStat))
-        return makeError("404", "Not Found", realRoot);
      if (r.getMethod() == "GET" || r.getMethod() == "HEAD") {
+         if (stat(fullPath.c_str(), &fStat))
+             return makeError("404", "Not Found", realRoot);
          if (fStat.st_mode & S_IFDIR) {
              if (locIt != locations.end() && !locIt->_index.empty())
                  indexes = locIt->_index;
@@ -154,8 +154,19 @@ Response Host::processRequest(const Request& r) {
              else
                  return Response::fromFileNoBody("200", "OK", realRoot);
          }
-     } else if (r.getMethod() == "HEAD") {
-         return Response::fromFileNoBody("200", "OK", fullPath);
+     } else if (r.getMethod() == "PUT") {
+         int fd;
+         if (stat(fullPath.c_str(), &fStat)) {
+             fd = open(fullPath.c_str(), O_WRONLY | O_CREAT);
+             write(fd, r.getContent().data(), r.getContent().length());
+             close(fd);
+             return Response::fromStringNoBody("201", "Created", r.getContent());
+         } else {
+             fd = open(fullPath.c_str(), O_WRONLY | O_TRUNC);
+             write(fd, r.getContent().data(), r.getContent().length());
+             close(fd);
+             return Response::fromStringNoBody("200", "OK", r.getContent());
+         }
      } else
          return makeError("501", "Not Implemented", realRoot);
     return makeError("404", "Not Found", realRoot);
