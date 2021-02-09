@@ -160,13 +160,15 @@ Response Host::processRequest(const Request& r) {
              fd = open(fullPath.c_str(), O_WRONLY | O_CREAT);
              write(fd, r.getContent().data(), r.getContent().length());
              close(fd);
-             return Response::fromStringNoBody("201", "Created", r.getContent());
+             ret = Response::fromStringNoBody("201", "Created", "");
+             ret.setHeader("Location", "http://" + joinPath(names.front(), r.getPath()));
          } else {
              fd = open(fullPath.c_str(), O_WRONLY | O_TRUNC);
              write(fd, r.getContent().data(), r.getContent().length());
              close(fd);
-             return Response::fromStringNoBody("200", "OK", r.getContent());
+             ret = Response::fromStringNoBody("200", "OK", r.getContent());
          }
+         return ret;
      } else
          return makeError("501", "Not Implemented", realRoot);
     return makeError("404", "Not Found", realRoot);

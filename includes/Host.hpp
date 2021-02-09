@@ -14,7 +14,6 @@
 #include "Config.hpp"
 
 class Host {
-private:
     typedef Config::ConfigServer::ConfigLocation conf_loc;
     struct sockaddr_in									sockAddr;
     std::vector<std::string>							names;

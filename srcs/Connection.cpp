@@ -46,7 +46,7 @@ void Connection::readData() {
         }
     } else {
         _isOpen = false;
-        if (r == 0) {
+        if (r == 0 && !rdata.empty()) {
             if (requests.empty() || requests.back().isSecondPart())
                 requests.push(Request());
             requests.back().parse(rdata);

@@ -10,7 +10,6 @@
 #include "util.hpp"
 
 class Request {
-private:
 	bool firstPart;
 	bool secondPart;
 	bool flagError;
