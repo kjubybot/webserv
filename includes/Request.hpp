@@ -10,24 +10,22 @@
 #include "util.hpp"
 
 class Request {
-private:
 	bool firstPart;
 	bool secondPart;
 	bool flagError;
-	int contentLen;
+	uint64_t contentLen;
 	int maxBodySize;
 
 	std::string path;
 	std::string method;
 	std::string content;
-	std::string htmlPage;
 
 	std::map<std::string, std::string> headers;
 	std::pair<std::string, std::string> error;
 
     void parseFirst(std::string &line);
     void parseSecond(std::string& line);
-	int checkSymbols(char sym);
+    int checkSymbols(char sym);
 public:
 
     Request();
@@ -36,12 +34,12 @@ public:
 	void setMaxBodySize(int maxBodySize);
 	void setPath(const std::string &path);
     void setMethod(const std::string &method);
-    void setHtmlPage(const std::string &htmlPage);
 
+    uint64_t getContentLen() const;
 	int getMaxBodySize() const;
 	const std::string &getPath() const;
     const std::string &getMethod() const;
-    const std::string &getHtmlPage() const;
+    const std::string &getContent() const;
     std::pair<std::string, std::string> getError() const;
     const std::map<std::string, std::string> &getHeaders() const;
 
@@ -52,7 +50,6 @@ public:
     bool isSecondPart() const;
 
     void addError(std::string errorKey, std::string errorValue);
-
 };
 
 #endif //REQUEST_HPP

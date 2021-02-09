@@ -12,10 +12,6 @@ void Request::setPath(const std::string &path) {
 	Request::path = path;
 }
 
-void Request::setHtmlPage(const std::string &htmlPage) {
-	Request::htmlPage = htmlPage;
-}
-
 std::pair<std::string, std::string> Request::getError() const {
     return error;
 }
@@ -24,8 +20,8 @@ void Request::setMethod(const std::string &method) {
 	Request::method = method;
 }
 
-const std::string &Request::getHtmlPage() const {
-	return htmlPage;
+const std::string &Request::getContent() const {
+	return content;
 }
 
 const std::string &Request::getPath() const {
@@ -38,6 +34,10 @@ const std::string &Request::getMethod() const {
 
 const std::map<std::string, std::string> &Request::getHeaders() const {
 	return headers;
+}
+
+uint64_t Request::getContentLen() const {
+    return contentLen;
 }
 
 void Request::parse(std::string& line) {
@@ -66,7 +66,7 @@ void Request::parseFirst(std::string &line) {
         Request::setMethod(arr[0]);
         Request::setPath(arr[1]);
     } else {
-		addError("400", "Bad Request");
+        addError("400", "Bad Request");
         return;
     }
     line.erase(0, crlf + 2);
@@ -121,10 +121,6 @@ bool Request::isFlagError() const {
 void Request::parseSecond(std::string &line) {
     static size_t toRead;
 
-    if (maxBodySize < contentLen) {
-        addError("413", "Request Entity Too Large");
-        return;
-    }
     if (toRead == 0) {
         if (headers.find("transfer-encoding") == headers.end())
             toRead = contentLen;
@@ -141,7 +137,7 @@ void Request::parseSecond(std::string &line) {
         secondPart = true;
         return;
     }
-    if (toRead >= line.length()) {
+    if (toRead > line.length()) {
         content += line;
         toRead -= line.length();
         line.clear();

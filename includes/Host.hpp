@@ -3,6 +3,7 @@
 
 #include <arpa/inet.h>
 #include <dirent.h>
+#include <list>
 #include <vector>
 #include <map>
 #include <string>
@@ -13,36 +14,27 @@
 #include "Config.hpp"
 
 class Host {
-//	typedef struct	location {
-//		std::vector<std::string> 	name;
-//		std::string 				root;
-//		std::vector<std::string> 	allowedMethods;
-//		std::string 				autoIndex;
-//		std::vector<std::string> 	index;
-//		std::vector<std::string>	cgiExtensions;
-//		std::string 				cgiPath;
-//		std::string 				uploadPath;
-//	}				Location;
-
-    struct sockaddr_in					sockAddr;
-    std::vector<std::string>			names;
-	std::map<std::string, std::string>	errorPages;
-	uint64_t 							maxBodySize;
-	std::string 						root;
-	std::vector<std::string> 			index;
-	// std::vector<Location>				locations;
+    typedef Config::ConfigServer::ConfigLocation conf_loc;
+    struct sockaddr_in									sockAddr;
+    std::vector<std::string>							names;
+	std::map<std::string, std::string>					errorPages;
+	uint64_t 											maxBodySize;
+	std::string 										root;
+	std::vector<std::string> 							index;
+	std::list<conf_loc>	locations;
 
 	std::string makeAutoindex(const std::string& path) const;
-	Response makeError(const std::string& code, const std::string& message);
-
+	Response makeError(const std::string& code, const std::string& message, const std::string& root);
+	static bool forSortingByLength(const conf_loc& a, const conf_loc& b);
+	std::list<conf_loc>::iterator matchLocation(const std::string& loc);
 public:
-	Host(struct sockaddr_in, const Config& config);
+	Host(const Config::ConfigServer& server);
 	~Host();
 	Host(const Host& h);
 	Host &operator=(const Host& h);
 
     struct sockaddr_in getSockAddr() const;
-    const std::string& getName() const;
+    std::string getName() const;
     const std::map<std::string, std::string>& getErrorPages() const;
 	uint64_t getMaxBodySize() const;
 	const std::string& getRoot() const;

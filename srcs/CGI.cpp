@@ -42,15 +42,16 @@ std::string CGI::executeCGI()
 	}
 	else if (pid > 0) {
 		status = 0;
-		// write(fd[1], content, content-length); ???
-		// close(fd[1]); ???
+		close(fd[0]);
+		// write(fd[1], content, content-length);
+		close(fd[1]);
 		waitpid(pid, &status, 0);
 		if (WIFEXITED(status))
 			status = WEXITSTATUS(status);
 		std::cout << "status: " << status << std::endl;
 	}
 	else {
-		// close(fd[1]); ???
+		close(fd[1]);
 		int outputFd = open("./cgi_response", O_RDWR | O_CREAT | O_TRUNC,
 			S_IRWXU | S_IRGRP | S_IROTH);
 		if (dup2(fd[0], 0) < 0)
