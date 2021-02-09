@@ -1,14 +1,14 @@
 #include "CGI.hpp"
 
-CGI::CGI(const std::string& path, const std::string& source, Config& config)
-	: _cgiPath(path), _cgiSource(source), _config(config)
+CGI::CGI(const std::string& path, const std::string& source)
+	: _cgiPath(path), _cgiSource(source)
 { }
 
 CGI::~CGI()
 { }
 
 CGI::CGI(const CGI& cgi)
-	: _cgiPath(cgi._cgiPath), _cgiSource(cgi._cgiSource), _config(cgi._config)
+	: _cgiPath(cgi._cgiPath), _cgiSource(cgi._cgiSource)
 { }
 
 std::string CGI::processCGI()
@@ -113,7 +113,7 @@ char** CGI::formEnvs() const
 
 	strEnvs["PATH_INFO"] = "/"; // for tester
 	// strEnvs["PATH_INFO"] = "/foo/bar.php"; // path after cgi script, request line before ? (if ? not exist - fulll line)
-	strEnvs["PATH_TRANSLATED"] = "/"; // for tester
+	//strEnvs["PATH_TRANSLATED"] = "/"; // for tester
 	// strEnvs["PATH_TRANSLATED"] = "/home/foo/bar.php"; // absolute path to server + PATH_INFO
 	strEnvs["SCRIPT_NAME"] = "/test.php"; // file without full path
 

@@ -169,6 +169,8 @@ Response Host::processRequest(const Request& r) {
              ret = Response::fromStringNoBody("200", "OK", r.getContent());
          }
          return ret;
+     } else if (r.getMethod() == "POST") {
+         std::cout << "HELP" << std::endl;
      } else
          return makeError("501", "Not Implemented", realRoot);
     return makeError("404", "Not Found", realRoot);
