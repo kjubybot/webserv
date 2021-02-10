@@ -1,3 +1,4 @@
+#include <list>
 #include "Config.hpp"
 
 Config::Config(const std::string& path)
@@ -296,7 +297,7 @@ void Config::parseLocationBlockDirectives(std::vector<std::string> line, size_t 
 
 void Config::fillLocationsDefault()
 {
-	std::vector<ConfigServer::ConfigLocation>::iterator it;
+	std::list<ConfigServer::ConfigLocation>::iterator it;
 	for (it = this->_servers.back()._locations.begin(); it != this->_servers.back()._locations.end(); it++) {
 		if (it->_root == "") {
 			it->_root = this->_servers.back()._root;
@@ -399,7 +400,7 @@ std::string Config::getDefaultServerRoot() const
 std::vector<std::string> Config::getDefaultServerIndexPages() const
 { return (this->_servers.front()._index); }
 
-std::vector<Config::ConfigServer::ConfigLocation> Config::getDefaultServerLocations() const
+std::list<Config::ConfigServer::ConfigLocation> Config::getDefaultServerLocations() const
 { return (this->_servers.front()._locations); }
 
 Config::ConfigServer Config::getServerById(size_t idx) const
@@ -445,7 +446,7 @@ uint64_t Config::ConfigServer::getMaxBodySize() const
 		return (UINT64_MAX);
 }
 
-std::vector<Config::ConfigServer::ConfigLocation> Config::ConfigServer::getLocations() const
+std::list<Config::ConfigServer::ConfigLocation> Config::ConfigServer::getLocations() const
 { return (this->_locations); }
 
 

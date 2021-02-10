@@ -28,15 +28,15 @@ struct sockaddr_in Connection::getSockAddr() const {
 void Connection::readData() {
     char buf[4096];
     int r = read(sock, buf, 4096);
-    data.append(buf, r);
     if (r > 0) {
-        while (!data.empty()) {
+        rdata.append(buf, r);
+        while (!rdata.empty()) {
             if (requests.empty() || requests.back().isSecondPart())
                 requests.push(Request());
-
-            if (!requests.back().isFirstPart() && data.find("\r\n\r\n") == std::string::npos)
+            if (!requests.back().isFirstPart() && rdata.find("\r\n\r\n") == std::string::npos)
                 return;
-            requests.back().parse(data);
+            requests.back().parse(rdata);
+            checkHeaders(requests.back());
             if (!requests.back().isSecondPart())
                 return;
             if (requests.back().isFlagError()) {
@@ -46,10 +46,10 @@ void Connection::readData() {
         }
     } else {
         _isOpen = false;
-        if (r == 0) {
+        if (r == 0 && !rdata.empty()) {
             if (requests.empty() || requests.back().isSecondPart())
                 requests.push(Request());
-            requests.back().parse(data);
+            requests.back().parse(rdata);
             if (!requests.back().isSecondPart())
                 requests.back().addError("400", "Bad request");
             return;
@@ -58,9 +58,13 @@ void Connection::readData() {
 }
 
 void Connection::writeData() {
-    std::string resData = responses.front().getData();
-    write(sock, resData.data(), resData.length());
-    responses.pop();
+    if (!responses.empty()) {
+        wdata += responses.front().getData();
+        responses.pop();
+    }
+    if (!wdata.empty()) {
+        wdata.erase(0, write(sock, wdata.data(), wdata.length() > 4096 ? 4096 : wdata.length()));
+    }
 }
 
 bool Connection::isOpen() const {
@@ -74,7 +78,7 @@ bool Connection::reqReady() const {
 }
 
 bool Connection::resReady() const {
-    return !responses.empty();
+    return (!responses.empty() || !wdata.empty());
 }
 
 Host& Connection::matchHost(const Request& request) {
@@ -86,6 +90,13 @@ Host& Connection::matchHost(const Request& request) {
         if (it->getName() == headers["host"])
             return *it;
     return hosts.front();
+}
+
+void Connection::checkHeaders(Request& request) {
+    Host host = matchHost(request);
+
+    if (host.getMaxBodySize() < request.getContentLen())
+        request.addError("413", "Request Entity Too Large");
 }
 
 void Connection::routeRequests() {

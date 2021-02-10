@@ -2,7 +2,7 @@
 
 // Public methods
 
-Request::Request() : firstPart(false), secondPart(false), flagError(false), contentLen(0) {}
+Request::Request() : firstPart(false), secondPart(false), flagError(false), contentLen(0), maxBodySize(0) {}
 
 Request::~Request() {
     headers.clear();
@@ -10,10 +10,6 @@ Request::~Request() {
 
 void Request::setPath(const std::string &path) {
 	Request::path = path;
-}
-
-void Request::setHtmlPage(const std::string &htmlPage) {
-	Request::htmlPage = htmlPage;
 }
 
 std::pair<std::string, std::string> Request::getError() const {
@@ -24,8 +20,8 @@ void Request::setMethod(const std::string &method) {
 	Request::method = method;
 }
 
-const std::string &Request::getHtmlPage() const {
-	return htmlPage;
+const std::string &Request::getContent() const {
+	return content;
 }
 
 const std::string &Request::getPath() const {
@@ -38,6 +34,10 @@ const std::string &Request::getMethod() const {
 
 const std::map<std::string, std::string> &Request::getHeaders() const {
 	return headers;
+}
+
+uint64_t Request::getContentLen() const {
+    return contentLen;
 }
 
 void Request::parse(std::string& line) {
@@ -81,26 +81,36 @@ void Request::parseFirst(std::string &line) {
         size_t colon = l.find(":");
         if (colon != std::string::npos) {
             std::string headerName = l.substr(0, colon);
-            if (headerName[0] == ' ' || headerName[0] == '\t' || headerName[colon - 1] == ' ' || headerName[colon - 1] == '\t') {
+            // check symbols >= 9 || <= 13
+            if (checkSymbols(headerName[0]) || checkSymbols(headerName[colon - 1])) {
+            //headerName[0] == ' ' || headerName[0] == '\t' || headerName[colon - 1] == ' ' || headerName[colon - 1] == '\t') {
                 addError("400", "Bad Request");
                 return;
             }
             std::transform(headerName.begin(), headerName.end(), headerName.begin(), ::tolower);
             std::string headerValue = trim(l.substr(colon + 2));
-            headers[headerName] = headerValue;
+            // check transfer-encoding and content-length
             if (headerName == "content-length") {
-                if (headers.count("content-length") > 1 || method == "GET") {
+                if (method == "GET" || headers.find("content-length") != headers.end()) {
                     addError("400", "Bad Request");
                     return;
                 }
                 contentLen = std::stoi(headerValue);
             }
+            headers[headerName] = headerValue; // check double header name
         }
         line.erase(0, crlf + 2);
+    }
+    if (headers.count("content-length") == 1 && headers.count("transfer-encoding") == 1) {
+        headers.erase("content-length");
+        contentLen = 0;
     }
     firstPart = true;
 }
 
+int Request::checkSymbols(char sym) {
+	return ((9 <= sym && sym <= 13) || sym == ' ');
+}
 
 bool Request::isFlagError() const {
 	return flagError;
@@ -127,7 +137,7 @@ void Request::parseSecond(std::string &line) {
         secondPart = true;
         return;
     }
-    if (toRead >= line.length()) {
+    if (toRead > line.length()) {
         content += line;
         toRead -= line.length();
         line.clear();
@@ -138,12 +148,12 @@ void Request::parseSecond(std::string &line) {
         if (headers.find("transfer-encoding") == headers.end())
             secondPart = true;
     }
-//    std::cout << "FINISHED PARSING REQUEST" << std::endl;
-//    std::cout << "Method: " << method << "; path: " << path << std::endl;
-//    std::cout << "Headers: " << std::endl;
-//    for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
-//        std::cout << it->first << ": " << it->second << std::endl << std::endl;
-//    std::cout << content << std::endl;
+    std::cout << "FINISHED PARSING REQUEST" << std::endl;
+    std::cout << "Method: " << method << "; path: " << path << std::endl;
+    std::cout << "Headers: " << std::endl;
+    for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
+        std::cout << it->first << ": " << it->second << std::endl << std::endl;
+    std::cout << content << std::endl;
 }
 //	// if (GET)
 //		// return;
@@ -212,4 +222,14 @@ bool Request::isFirstPart() const {
 
 bool Request::isSecondPart() const {
     return secondPart;
+}
+
+int Request::getMaxBodySize() const
+{
+	return maxBodySize;
+}
+
+void Request::setMaxBodySize(int maxBodySize)
+{
+	Request::maxBodySize = maxBodySize;
 }

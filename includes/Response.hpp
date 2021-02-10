@@ -26,7 +26,9 @@ public:
     ~Response();
 
     static Response fromFile(const std::string& code, const std::string& message, const std::string& filename);
+    static Response fromFileNoBody(const std::string& code, const std::string& message, const std::string& filename);
     static Response fromString(const std::string& code, const std::string& message, const std::string& body);
+    static Response fromStringNoBody(const std::string& code, const std::string& message, const std::string& body);
     std::string getData();
     void setCode(const std::string& code);
     void setMessage(const std::string& message);

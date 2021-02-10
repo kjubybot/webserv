@@ -3,6 +3,7 @@
 
 #include <arpa/inet.h>
 #include <dirent.h>
+#include <list>
 #include <vector>
 #include <map>
 #include <string>
@@ -13,18 +14,19 @@
 #include "Config.hpp"
 
 class Host {
-private :
+    typedef Config::ConfigServer::ConfigLocation conf_loc;
     struct sockaddr_in									sockAddr;
     std::vector<std::string>							names;
 	std::map<std::string, std::string>					errorPages;
 	uint64_t 											maxBodySize;
 	std::string 										root;
 	std::vector<std::string> 							index;
-	std::vector<Config::ConfigServer::ConfigLocation>	locations;
+	std::list<conf_loc>	locations;
 
 	std::string makeAutoindex(const std::string& path) const;
-	Response makeError(const std::string& code, const std::string& message);
-
+	Response makeError(const std::string& code, const std::string& message, const std::string& root);
+	static bool forSortingByLength(const conf_loc& a, const conf_loc& b);
+	std::list<conf_loc>::iterator matchLocation(const std::string& loc);
 public:
 	Host(const Config::ConfigServer& server);
 	~Host();

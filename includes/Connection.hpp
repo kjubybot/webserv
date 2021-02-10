@@ -22,7 +22,8 @@ class Connection {
     struct sockaddr_in sockAddr;
     bool _isOpen;
     std::list<Host> hosts;
-    std::string data;
+    std::string rdata;
+    std::string wdata;
     std::queue<Request> requests;
     std::queue<Response> responses;
 
@@ -30,6 +31,7 @@ class Connection {
     Connection(const Connection &);
     Connection &operator=(const Connection &);
     Host& matchHost(const Request& request);
+    void checkHeaders(Request& request);
 public:
     Connection(int sock, struct sockaddr_in sockAddr, std::list<Host> hosts);
     ~Connection();
