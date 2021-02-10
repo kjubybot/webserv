@@ -109,7 +109,7 @@ char** CGI::formEnvs() const
 	strEnvs["QUERY_STRING"] = "v=1";							// store in Request object but need to remove chars before ? (if its presented)
 	strEnvs["CONTENT_TYPE"] = "text/html";						// store in Request object
 	strEnvs["CONTENT_LENGTH"] = "100";							// store in Request object
-	strEnvs["REMOTE_ADDR"] = "127.0.0.1";						// store in Connection
+	strEnvs["REMOTE_ADDR"] = "127.0.0.1";						// store in Config object
 
 	strEnvs["PATH_INFO"] = "/"; // for tester
 	// strEnvs["PATH_INFO"] = "/foo/bar.php"; // path after cgi script, request line before ? (if ? not exist - fulll line)
@@ -117,7 +117,7 @@ char** CGI::formEnvs() const
 	// strEnvs["PATH_TRANSLATED"] = "/home/foo/bar.php"; // absolute path to server + PATH_INFO
 	strEnvs["SCRIPT_NAME"] = "/test.php"; // file without full path
 
-	// add headers if they are not presented to map (this headers started with HTTP_, and - replaced by _)
+	// add headers (this headers started with HTTP_, and - replaced by _)
 	 for (iterator it = request->headers.begin(); it != request->headers.end(); it++) {
 	 	std::string header = it->first;
 	 	header.replace(header.find("-"), 1, "_");

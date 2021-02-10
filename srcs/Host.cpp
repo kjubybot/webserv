@@ -56,7 +56,7 @@ Host& Host::operator=(const Host& h) {
 //    closedir(dir);
 //    return ret;
 //}
-//
+
 Response Host::makeError(const std::string& code, const std::string& message) {
     Response ret;
 
