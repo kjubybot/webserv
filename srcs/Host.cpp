@@ -169,7 +169,22 @@ Response Host::processRequest(const Request& r) {
              ret = Response::fromStringNoBody("200", "OK", r.getContent());
          }
          return ret;
-     } else
+     }
+     else if (r.getMethod() == "POST") {
+     	CGI cgi("/usr/bin/php", "html/test.php");
+//     	try {
+			std::string resp = cgi.processCGI();
+			ret = Response::fromStringNoBody("200", "OK", r.getContent());
+			std::cout << "OK: " << resp << std::endl;
+		 return ret;
+//     	}
+//     	catch (const std::exception& ex) {
+//     		std::cerr << ex.what() << std::endl;
+//			return makeError("400", "Bad Request", realRoot);
+//     	}
+
+     }
+     else
          return makeError("501", "Not Implemented", realRoot);
     return makeError("404", "Not Found", realRoot);
 }

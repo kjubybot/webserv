@@ -1,14 +1,14 @@
 #include "CGI.hpp"
 
-CGI::CGI(const std::string& path, const std::string& source, Config& config)
-	: _cgiPath(path), _cgiSource(source), _config(config)
+CGI::CGI(const std::string& path, const std::string& source)
+	: _cgiPath(path), _cgiSource(source)
 { }
 
 CGI::~CGI()
 { }
 
 CGI::CGI(const CGI& cgi)
-	: _cgiPath(cgi._cgiPath), _cgiSource(cgi._cgiSource), _config(cgi._config)
+	: _cgiPath(cgi._cgiPath), _cgiSource(cgi._cgiSource)
 { }
 
 std::string CGI::processCGI()
@@ -42,6 +42,7 @@ std::string CGI::executeCGI()
 	}
 	else if (pid > 0) {
 		status = 0;
+		close(fd[0]);
 		// write(fd[0], content, content-length);
 		close(fd[1]);
 		waitpid(pid, &status, 0);
@@ -103,17 +104,17 @@ char** CGI::formEnvs() const
 	strEnvs["SERVER_NAME"] = "";								// store in Config object
 	strEnvs["SERVER_PORT"] = "8081";							// store in Config object
 	strEnvs["REQUEST_METHOD"] = "POST";							// store in Request object
-	strEnvs["REQUEST_URI"] = "";		// store in Request object, but need to remove chars after ? (if its presented)
-	strEnvs["QUERY_STRING"] = "v=1";							// store in Request object but need to remove chars before ? (if its presented)
-	strEnvs["CONTENT_TYPE"] = "text/html";						// store in Request object
-	strEnvs["CONTENT_LENGTH"] = "100";							// store in Request object
-	strEnvs["REMOTE_ADDR"] = "127.0.0.1";						// store in Config object
+	strEnvs["REQUEST_URI"] = "html/test.php";		// store in Request object, but need to remove chars after ? (if its presented)
+	strEnvs["QUERY_STRING"] = "";							// store in Request object but need to remove chars before ? (if its presented)
+	strEnvs["CONTENT_TYPE"] = "";						// store in Request object
+	strEnvs["CONTENT_LENGTH"] = "";							// store in Request object
+	strEnvs["REMOTE_ADDR"] = "0.0.0.0";						// store in Config object
 
 	strEnvs["PATH_INFO"] = "/"; // for tester
 	// strEnvs["PATH_INFO"] = "/foo/bar.php"; // path after cgi script, request line before ? (if ? not exist - fulll line)
-	strEnvs["PATH_TRANSLATED"] = "/"; // for tester
+	//strEnvs["PATH_TRANSLATED"] = "/"; // for tester
 	// strEnvs["PATH_TRANSLATED"] = "/home/foo/bar.php"; // absolute path to server + PATH_INFO
-	strEnvs["SCRIPT_NAME"] = "/test.php"; // file without full path
+	// strEnvs["SCRIPT_NAME"] = "index.php"; // file without full path
 
 	/*
 	// add headers (this headers started with HTTP_, and - replaced by _)
