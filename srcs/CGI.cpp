@@ -42,8 +42,7 @@ std::string CGI::executeCGI()
 	}
 	else if (pid > 0) {
 		status = 0;
-		close(fd[0]);
-		// write(fd[1], content, content-length);
+		// write(fd[0], content, content-length);
 		close(fd[1]);
 		waitpid(pid, &status, 0);
 		if (WIFEXITED(status))
@@ -80,7 +79,6 @@ char** CGI::formArgs() const
 char** CGI::formEnvs() const
 {
 	std::map<std::string, std::string> strEnvs;
-
 	/*
 	if request->headers.count("Authorization") == 1 {
 	 	std::vector<std::string> authVec = split(request->headers["Authorization"];
@@ -96,16 +94,16 @@ char** CGI::formEnvs() const
 			}
 		}
 	}
-
+	*/
 	// example : http://lemp.test/test.php/foo/bar.php?v=1
 
 	strEnvs["SERVER_SOFTWARE"] = "webserv";						// constant
 	strEnvs["GATEWAY_INTERFACE"] = "CGI/1.1";					// constant
 	strEnvs["SERVER_PROTOCOL"] = "HTTP/1.1";					// constant
 	strEnvs["SERVER_NAME"] = "";								// store in Config object
-	strEnvs["SERVER_PORT"] = "1000";							// store in Config object
-	strEnvs["REQUEST_METHOD"] = "GET";							// store in Request object
-	strEnvs["REQUEST_URI"] = "/test.php/foo/bar.php?v=1";		// store in Request object, but need to remove chars after ? (if its presented)
+	strEnvs["SERVER_PORT"] = "8081";							// store in Config object
+	strEnvs["REQUEST_METHOD"] = "POST";							// store in Request object
+	strEnvs["REQUEST_URI"] = "";		// store in Request object, but need to remove chars after ? (if its presented)
 	strEnvs["QUERY_STRING"] = "v=1";							// store in Request object but need to remove chars before ? (if its presented)
 	strEnvs["CONTENT_TYPE"] = "text/html";						// store in Request object
 	strEnvs["CONTENT_LENGTH"] = "100";							// store in Request object
@@ -117,6 +115,7 @@ char** CGI::formEnvs() const
 	// strEnvs["PATH_TRANSLATED"] = "/home/foo/bar.php"; // absolute path to server + PATH_INFO
 	strEnvs["SCRIPT_NAME"] = "/test.php"; // file without full path
 
+	/*
 	// add headers (this headers started with HTTP_, and - replaced by _)
 	 for (iterator it = request->headers.begin(); it != request->headers.end(); it++) {
 	 	std::string header = it->first;
