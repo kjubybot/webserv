@@ -101,20 +101,20 @@ char** CGI::formEnvs() const
 	strEnvs["SERVER_SOFTWARE"] = "webserv";						// constant
 	strEnvs["GATEWAY_INTERFACE"] = "CGI/1.1";					// constant
 	strEnvs["SERVER_PROTOCOL"] = "HTTP/1.1";					// constant
-	strEnvs["SERVER_NAME"] = "";								// store in Config object
+	strEnvs["SERVER_NAME"] = "localhost";								// store in Config object
 	strEnvs["SERVER_PORT"] = "8081";							// store in Config object
 	strEnvs["REQUEST_METHOD"] = "POST";							// store in Request object
 	strEnvs["REQUEST_URI"] = "html/test.php";		// store in Request object, but need to remove chars after ? (if its presented)
 	strEnvs["QUERY_STRING"] = "";							// store in Request object but need to remove chars before ? (if its presented)
-	strEnvs["CONTENT_TYPE"] = "";						// store in Request object
-	strEnvs["CONTENT_LENGTH"] = "";							// store in Request object
+	strEnvs["CONTENT_TYPE"] = "text/html";						// store in Request object
+	strEnvs["CONTENT_LENGTH"] = "0";							// store in Request object
 	strEnvs["REMOTE_ADDR"] = "0.0.0.0";						// store in Config object
 
 	strEnvs["PATH_INFO"] = "/"; // for tester
 	// strEnvs["PATH_INFO"] = "/foo/bar.php"; // path after cgi script, request line before ? (if ? not exist - fulll line)
-	//strEnvs["PATH_TRANSLATED"] = "/"; // for tester
+//	strEnvs["PATH_TRANSLATED"] = ""; // for tester
 	// strEnvs["PATH_TRANSLATED"] = "/home/foo/bar.php"; // absolute path to server + PATH_INFO
-	// strEnvs["SCRIPT_NAME"] = "index.php"; // file without full path
+	// strEnvs["SCRIPT_NAME"] = "test.php"; // file without full path
 
 	/*
 	// add headers (this headers started with HTTP_, and - replaced by _)

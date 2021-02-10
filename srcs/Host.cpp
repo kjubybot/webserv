@@ -171,11 +171,11 @@ Response Host::processRequest(const Request& r) {
          return ret;
      }
      else if (r.getMethod() == "POST") {
-     	CGI cgi("/usr/bin/php", "html/test.php");
+     	CGI cgi("cgi_tester", "html/test.php");
 //     	try {
 			std::string resp = cgi.processCGI();
 			ret = Response::fromStringNoBody("200", "OK", r.getContent());
-			std::cout << "OK: " << resp << std::endl;
+			std::cout << "Response: " << resp << std::endl;
 		 return ret;
 //     	}
 //     	catch (const std::exception& ex) {
