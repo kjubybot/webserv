@@ -11,7 +11,7 @@ CGI::CGI(const CGI& cgi)
 	: _cgiPath(cgi._cgiPath), _cgiSource(cgi._cgiSource), _config(cgi._config)
 { }
 
-std::string CGI::processCGI()
+std::string CGI::processCGI(const Request& request)
 {
 	std::string result;
 
