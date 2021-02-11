@@ -79,36 +79,54 @@ char** CGI::formArgs() const
 char** CGI::formEnvs() const
 {
 	std::map<std::string, std::string> strEnvs;
-	char dirPath[4096];
 
-	if (_request.getHeaders().count("authorization")) {
-		std::vector<std::string> authVec = split(_request.getHeaders().at("authorization"), " ");
-		if (authVec.size() == 2 && authVec[0] == "Basic") {
-			strEnvs["AUTH_TYPE"] = authVec[0];
-			strEnvs["REMOTE_USER"] = ""; // encode this shit
-			strEnvs["REMOTE_IDENT"] = ""; // encode this shit
+	if (this->_request.getHeaders().count("authorization")) {
+		std::vector<std::string> authVec = split(this->_request.getHeaders()
+			.at("authorization"), " ");
+		strEnvs["AUTH_TYPE"] = authVec[0];
+		if (authVec[0] == "Basic") {
+			std::vector<std::string> splitBase64 = split(decode(authVec[1]), ":");
+			strEnvs["REMOTE_USER"] = splitBase64[0];
+			strEnvs["REMOTE_IDENT"] = splitBase64[1];
+		}
+		else {
+			strEnvs["REMOTE_USER"] = "";
+			strEnvs["REMOTE_IDENT"] = "";
 		}
 	}
 
-	strEnvs["CONTENT_LENGTH"] = _request.getContent().length();
-	strEnvs["CONTENT_TYPE"] = _request.getHeaders().at("content-type");
+	//
+	strEnvs["REMOTE_ADDR"] = "127.0.0.1"; // client ip
+
+	strEnvs["CONTENT_LENGTH"] = this->_request.getContent().length() != 0 ?
+		std::to_string(this->_request.getContent().length()) : "";
+	strEnvs["CONTENT_TYPE"] = this->_request.getHeaders().count("content-type") ?
+		this->_request.getHeaders().at("content-type") : "";
 	strEnvs["GATEWAY_INTERFACE"] = "CGI/1.1";
-	strEnvs["PATH_INFO"] = _request.getPath();
-	getcwd(dirPath, 4096);
-	strEnvs["PATH_TRANSLATED"] = std::string(dirPath) + _request.getPath();
-
-	std::vector<std::string> uriElems = splitUri(_request.getPath());
-	strEnvs["QUERY_STRING"] = uriElems[1];
-	strEnvs["REQUEST_METHOD"] = _request.getMethod();
-	strEnvs["REQUEST_URI"] = uriElems[0];
-
-//	strEnvs["SCRIPT_NAME"] = "...";
-
-	strEnvs["REMOTE_ADDR"] = "127.0.0.1";
-	strEnvs["SERVER_NAME"] = "";
-	strEnvs["SERVER_PORT"] = "8081";
 	strEnvs["SERVER_PROTOCOL"] = "HTTP/1.1";
 	strEnvs["SERVER_SOFTWARE"] = "webserv/1.0";
+
+	//
+	strEnvs["SERVER_NAME"] = "localhost"; // set in config
+	strEnvs["SERVER_PORT"] = "8081"; // set in config
+
+	strEnvs["REQUEST_METHOD"] = this->_request.getMethod();
+
+
+
+	// PATH_INFO
+	//PATH_TRANSLATED
+	//QUERY_STRING
+	//REQUEST_URI
+	//SCRIPT_NAME
+
+
+
+
+
+
+//	getcwd(pwd, 1024);
+//	strEnvs["PATH_INFO"] = std::string()
 
 
 /*
@@ -139,6 +157,28 @@ char** CGI::formEnvs() const
 	envs[i] = NULL;
 
 	return (envs);
+}
+
+std::string CGI::decode(const std::string& input) const
+{
+	char base64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	std::string result;
+	std::vector<int> base(256,-1);
+	for (int i = 0; i < 64; i++)
+		base[base64[i]] = i;
+
+	int val = 0, valb = -8;
+	for (size_t i = 0; i < input.size(); i++) {
+		if (base[input[i]] == -1)
+			break;
+		val = (val << 6) + base[input[i]];
+		valb += 6;
+		if (valb >= 0) {
+			result.push_back(char((val >> valb) & 0xFF));
+			valb -= 8;
+		}
+	}
+	return result;
 }
 
 std::vector<std::string> CGI::splitUri(const std::string& uri) const

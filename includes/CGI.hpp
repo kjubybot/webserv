@@ -28,6 +28,7 @@ private :
 	char** formArgs() const;
 	char** formEnvs() const;
 	std::vector<std::string> splitUri(const std::string& uri) const;
+	std::string decode(const std::string& input) const;
 
 public :
 
