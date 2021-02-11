@@ -37,7 +37,7 @@ const std::map<std::string, std::string> &Request::getHeaders() const {
 }
 
 uint64_t Request::getContentLen() const {
-    return contentLen;
+    return content.length();
 }
 
 void Request::parse(std::string& line) {
@@ -148,67 +148,13 @@ void Request::parseSecond(std::string &line) {
         if (headers.find("transfer-encoding") == headers.end())
             secondPart = true;
     }
-    std::cout << "FINISHED PARSING REQUEST" << std::endl;
-    std::cout << "Method: " << method << "; path: " << path << std::endl;
-    std::cout << "Headers: " << std::endl;
-    for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
-        std::cout << it->first << ": " << it->second << std::endl << std::endl;
-    std::cout << content << std::endl;
+//    std::cout << "FINISHED PARSING REQUEST" << std::endl;
+//    std::cout << "Method: " << method << "; path: " << path << std::endl;
+//    std::cout << "Headers: " << std::endl;
+//    for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
+//        std::cout << it->first << ": " << it->second << std::endl << std::endl;
+//    std::cout << content << std::endl;
 }
-//	// if (GET)
-//		// return;
-//
-//	// if : Content-Len && POST - need limit size read
-//	if (contentLen > 0 && headers.count("transfer-encoding") == 0) {
-//		content += line;
-//		content.erase(contentLen + 1);
-//		line.erase(0, contentLen);
-//		finishBody = true;
-//		return;
-//	}
-//
-//
-//	// if : Transfer-Encoding and == chunked, read len symbols
-//	if (headers.count("transfer-encoding") == 1) {
-//		if (headers["transfer-encoding"] == "chunked") {
-//			if (transferLen == 0 && remainder == 0) {
-//				transferLen = std::stoi(line, 0, 16);
-//				if (transferLen == 0) {
-//					finishBody = true;
-//					return ;
-//				}
-//			}
-//			else {
-//				if (remainder > 0) {
-//					if (line.length() > remainder) {
-//						line.erase(remainder + 1);
-////						content += line.substr(0, remainder);
-//						remainder = 0;
-//					}
-//					else {
-//						remainder -= line.length();
-//					}
-//					content += line;
-//				}
-//				else {
-//					if (line.length() < transferLen) {
-//						remainder = transferLen - line.length();
-//					}
-//					else { // line.length() > transferLen
-//						line.erase(transferLen);
-//					}
-//					content += line;
-//					transferLen = 0;
-//				}
-//			}
-//		}
-//		else {
-//			addError("501", "Not Implemented");
-//			throw HttpErrorException("501", "Not Implemented", *this);
-//		}
-//	} else
-//	    finishBody = true;
-//}
 
 void Request::addError(std::string errorKey, std::string errorValue) {
 	firstPart = secondPart = flagError = true;

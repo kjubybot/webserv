@@ -1,7 +1,7 @@
 #include "CGI.hpp"
 
-CGI::CGI(const std::string& path, const std::string& source)
-	: _cgiPath(path), _cgiSource(source)
+CGI::CGI(const std::string& path, const std::string& source, const Request& request)
+	: _cgiPath(path), _cgiSource(source), request(request)
 { }
 
 CGI::~CGI()
@@ -43,7 +43,7 @@ std::string CGI::executeCGI()
 	else if (pid > 0) {
 		status = 0;
 		close(fd[0]);
-		// write(fd[1], content, content-length);
+		// write(fd[0], content, content-length);
 		close(fd[1]);
 		waitpid(pid, &status, 0);
 		if (WIFEXITED(status))
@@ -80,7 +80,6 @@ char** CGI::formArgs() const
 char** CGI::formEnvs() const
 {
 	std::map<std::string, std::string> strEnvs;
-
 	/*
 	if request->headers.count("Authorization") == 1 {
 	 	std::vector<std::string> authVec = split(request->headers["Authorization"];
@@ -96,28 +95,27 @@ char** CGI::formEnvs() const
 			}
 		}
 	}
-
+	*/
 	// example : http://lemp.test/test.php/foo/bar.php?v=1
 
 	strEnvs["SERVER_SOFTWARE"] = "webserv";						// constant
 	strEnvs["GATEWAY_INTERFACE"] = "CGI/1.1";					// constant
 	strEnvs["SERVER_PROTOCOL"] = "HTTP/1.1";					// constant
-	strEnvs["SERVER_NAME"] = "";								// store in Config object
-	strEnvs["SERVER_PORT"] = "1000";							// store in Config object
-	strEnvs["REQUEST_METHOD"] = "GET";							// store in Request object
-	strEnvs["REQUEST_URI"] = "/test.php/foo/bar.php?v=1";		// store in Request object, but need to remove chars after ? (if its presented)
-	strEnvs["QUERY_STRING"] = "v=1";							// store in Request object but need to remove chars before ? (if its presented)
+	strEnvs["SERVER_NAME"] = "localhost";								// store in Config object
+	strEnvs["SERVER_PORT"] = "8081";							// store in Config object
+	strEnvs["REQUEST_METHOD"] = request.getMethod();							// store in Request object
+	strEnvs["REQUEST_URI"] = request.getPath();		// store in Request object, but need to remove chars after ? (if its presented)
+	strEnvs["QUERY_STRING"] = "";							// store in Request object but need to remove chars before ? (if its presented)
 	strEnvs["CONTENT_TYPE"] = "text/html";						// store in Request object
-	strEnvs["CONTENT_LENGTH"] = "100";							// store in Request object
-	strEnvs["REMOTE_ADDR"] = "127.0.0.1";						// store in Connection
-
-	strEnvs["PATH_INFO"] = "/"; // for tester
-	// strEnvs["PATH_INFO"] = "/foo/bar.php"; // path after cgi script, request line before ? (if ? not exist - fulll line)
-	//strEnvs["PATH_TRANSLATED"] = "/"; // for tester
+	strEnvs["CONTENT_LENGTH"] = std::to_string(request.getContentLen());							// store in Request object
+	strEnvs["REMOTE_ADDR"] = "0.0.0.0";						// store in Config object
+	strEnvs["PATH_INFO"] = request.getPath(); // for tester
+//	strEnvs["PATH_TRANSLATED"] = ""; // for tester
 	// strEnvs["PATH_TRANSLATED"] = "/home/foo/bar.php"; // absolute path to server + PATH_INFO
-	strEnvs["SCRIPT_NAME"] = "/test.php"; // file without full path
+	strEnvs["SCRIPT_NAME"] = "html/test.php"; // file without full path
 
-	// add headers if they are not presented to map (this headers started with HTTP_, and - replaced by _)
+	/*
+	// add headers (this headers started with HTTP_, and - replaced by _)
 	 for (iterator it = request->headers.begin(); it != request->headers.end(); it++) {
 	 	std::string header = it->first;
 	 	header.replace(header.find("-"), 1, "_");

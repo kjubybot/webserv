@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include "Config.hpp"
+#include "Request.hpp"
 #include "util.hpp"
 
 class CGI
@@ -17,8 +18,8 @@ class CGI
 private :
 	std::string _cgiPath;
 	std::string _cgiSource;
-//	Config		_config;
-	// Request _request;
+	Request request;
+	// Config		_config;
 
 	CGI();
 	CGI& operator= (const CGI& cgi);
@@ -28,8 +29,7 @@ private :
 	char** formEnvs() const;
 
 public :
-
-	explicit CGI(const std::string& path, const std::string& source);
+	explicit CGI(const std::string& path, const std::string& source, const Request& request);
 	~CGI();
 	CGI(const CGI& cgi);
 

@@ -69,7 +69,7 @@ Response Host::makeError(const std::string& code, const std::string& message, co
 }
 
 bool Host::forSortingByLength(const conf_loc& a, const conf_loc& b) {
-    return a._root.length() > b._root.length();
+    return a._name.length() > b._name.length();
 }
 
 struct sockaddr_in Host::getSockAddr() const {
@@ -100,7 +100,7 @@ std::list<Config::ConfigServer::ConfigLocation>::iterator Host::matchLocation(co
     if (locations.empty())
         return locations.end();
     while (it != locations.end()) {
-        if (it->_root.compare(0, loc.length() - (loc[loc.length() - 1] == '/' ? 2 : 1), loc) == 0)
+        if (it->_name.compare(0, it->_name.rfind('/'), loc, 0, it->_name.rfind('/')) == 0)
             return it;
         ++it;
     }
@@ -109,19 +109,37 @@ std::list<Config::ConfigServer::ConfigLocation>::iterator Host::matchLocation(co
 
 Response Host::processRequest(const Request& r) {
     Response ret;
-    std::string fullPath, realRoot;
+    std::string fullPath, realRoot, uri, indexPath;
     struct stat fStat;
     std::map<std::string, std::string> errorMap;
     std::list<conf_loc>::iterator locIt;
     std::vector<std::string> indexes;
 
-    if ((locIt = matchLocation(r.getPath())) == locations.end())
+    if ((locIt = matchLocation(r.getPath())) == locations.end()) {
         realRoot = root;
-    else
+        uri = r.getPath();
+    } else {
         realRoot = locIt->_root;
+        if (r.getPath().length() > 0)
+            uri = r.getPath().substr(locIt->_name.length() - (locIt->_name[locIt->_name.length() - 1] == '/' ? 1 : 0));
+        else
+            uri = r.getPath();
+    }
     if (r.isFlagError())
         return makeError(r.getError().first, r.getError().second, realRoot);
-    fullPath = joinPath(realRoot, r.getPath());
+    if (locIt != locations.end() && !isIn(locIt->_allowedMethods, r.getMethod())) {
+        ret = makeError("405", "Method Not Allowed", realRoot);
+        std::string allow;
+        for (size_t i = 0; i < locIt->_allowedMethods.size(); ++i) {
+            allow += locIt->_allowedMethods[i];
+            if (i + 1 != locIt->_allowedMethods.size())
+                allow += ", ";
+        }
+        ret.setHeader("Allow", allow);
+        return ret;
+    }
+    fullPath = joinPath(realRoot, uri);
+    std::cout << fullPath << std::endl;
      if (r.getMethod() == "GET" || r.getMethod() == "HEAD") {
          if (stat(fullPath.c_str(), &fStat))
              return makeError("404", "Not Found", realRoot);
@@ -132,16 +150,17 @@ Response Host::processRequest(const Request& r) {
                  indexes = index;
              if (!indexes.empty()) {
                  for (size_t i = 0; i < index.size(); ++i) {
-                     fullPath = joinPath(realRoot, index[i]);
-                     if (stat(fullPath.c_str(), &fStat) == 0) {
+                     indexPath = joinPath(fullPath, index[i]);
+                     std::cout << indexPath << std::endl;
+                     if (stat(indexPath.c_str(), &fStat) == 0) {
                          if (r.getMethod() == "GET")
-                             return Response::fromFile("200", "OK", fullPath);
+                             return Response::fromFile("200", "OK", indexPath);
                          else
-                             return Response::fromFileNoBody("200", "OK", fullPath);
+                             return Response::fromFileNoBody("200", "OK", indexPath);
                      }
                  }
-             }
-             if ((locIt != locations.end() && locIt->getAutoIndex())) {
+                 return makeError("404", "Not Found", realRoot);
+             } else if ((locIt != locations.end() && locIt->getAutoIndex())) {
                  if (r.getMethod() == "GET")
                      return Response::fromString("200", "OK", makeAutoindex(realRoot));
                  else
@@ -150,9 +169,9 @@ Response Host::processRequest(const Request& r) {
                  return makeError("403", "Forbidden", realRoot);
          } else {
              if (r.getMethod() == "GET")
-                 return Response::fromFile("200", "OK", realRoot);
+                 return Response::fromFile("200", "OK", fullPath);
              else
-                 return Response::fromFileNoBody("200", "OK", realRoot);
+                 return Response::fromFileNoBody("200", "OK", fullPath);
          }
      } else if (r.getMethod() == "PUT") {
          int fd;
@@ -169,9 +188,22 @@ Response Host::processRequest(const Request& r) {
              ret = Response::fromStringNoBody("200", "OK", r.getContent());
          }
          return ret;
-     } else if (r.getMethod() == "POST") {
-         std::cout << "HELP" << std::endl;
-     } else
+     }
+     else if (r.getMethod() == "POST") {
+     	CGI cgi("html/cgi_tester", "html/test.php", r);
+//     	try {
+			std::string resp = cgi.processCGI();
+			ret = Response::fromStringNoBody("200", "OK", r.getContent());
+			std::cout << "Response: " << resp << std::endl;
+		 return ret;
+//     	}
+//     	catch (const std::exception& ex) {
+//     		std::cerr << ex.what() << std::endl;
+//			return makeError("400", "Bad Request", realRoot);
+//     	}
+
+     }
+     else
          return makeError("501", "Not Implemented", realRoot);
     return makeError("404", "Not Found", realRoot);
 }

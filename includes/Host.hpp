@@ -12,6 +12,7 @@
 #include "Request.hpp"
 #include "Response.hpp"
 #include "Config.hpp"
+#include "CGI.hpp"
 
 class Host {
     typedef Config::ConfigServer::ConfigLocation conf_loc;
