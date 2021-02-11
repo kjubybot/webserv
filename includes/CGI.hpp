@@ -18,7 +18,7 @@ class CGI
 private :
 	std::string _cgiPath;
 	std::string _cgiSource;
-	Config		_config;
+	// Config		_config;
 	// Request _request;
 
 	CGI();
@@ -29,7 +29,7 @@ private :
 	char** formEnvs() const;
 
 public :
-	explicit CGI(const std::string& path, const std::string& source, Config& config);
+	explicit CGI(const std::string& path, const std::string& source); //, Config& config);
 	~CGI();
 	CGI(const CGI& cgi);
 
