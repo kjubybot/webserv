@@ -24,6 +24,7 @@ public :
 			std::vector<std::string>	_cgiExtensions;
 			std::string 				_cgiPath;
 			std::string 				_uploadPath;
+			uint64_t					_maxBodySize;
 
 			std::string getName() const;
 			std::string getRoot() const;
@@ -33,6 +34,7 @@ public :
 			std::vector<std::string> getCGIExtensions()const;
 			std::string getCGIPath() const;
 			std::string getUploadPath() const;
+			uint64_t getMaxBodySize() const;
 		}				ConfigLocation;
 
 		std::vector<std::string>			_names;

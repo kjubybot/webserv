@@ -305,6 +305,7 @@ void Config::fillLocationsDefault()
 		if (it->_index.size() == 0) {
 			it->_index = this->_servers.back()._index;
 		}
+		it->_maxBodySize = this->_servers.back().getMaxBodySize();
 	}
 }
 
@@ -443,7 +444,7 @@ uint64_t Config::ConfigServer::getMaxBodySize() const
 		return (result);
 	}
 	else
-		return (UINT64_MAX);
+		return (0);
 }
 
 std::list<Config::ConfigServer::ConfigLocation> Config::ConfigServer::getLocations() const
@@ -473,6 +474,9 @@ std::string Config::ConfigServer::ConfigLocation::getCGIPath() const
 
 std::string Config::ConfigServer::ConfigLocation::getUploadPath() const
 { return (this->_uploadPath); }
+
+uint64_t Config::ConfigServer::ConfigLocation::getMaxBodySize() const
+{ return (this->_maxBodySize); }
 
 std::queue<Config::ConfigServer> Config::getServersQueue() const
 {

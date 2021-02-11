@@ -96,8 +96,39 @@ char** CGI::formEnvs() const
 		}
 	}
 	*/
-	// example : http://lemp.test/test.php/foo/bar.php?v=1
 
+	// example : http://localhost:8081/html/test.php
+
+	strEnvs["AUTH_TYPE"] = "";
+	strEnvs["CONTENT_LENGTH"] = "0";
+	strEnvs["CONTENT_TYPE"] = "text/plain";
+	strEnvs["GATEWAY_INTERFACE"] = "CGI/1.1";
+
+
+	strEnvs["PATH_INFO"] = "./html/test.php";
+	strEnvs["PATH_TRANSLATED"] = "/Users/wupdegra/Projects/Process/webserv/html/test.php";
+	char buff[4096];
+	getcwd(buff, 4096);
+	std::cout << buff << std::endl;
+
+	strEnvs["QUERY_STRING"] = "";
+	strEnvs["REMOTE_ADDR"] = "127.0.0.1";
+	strEnvs["REMOTE_IDENT"] = "";
+	strEnvs["REMOTE_USER"] = "";
+	strEnvs["REQUEST_METHOD"] = "POST";
+
+
+	strEnvs["REQUEST_URI"] = "./html/test.php";
+//	strEnvs["SCRIPT_NAME"] = "...";
+
+
+	strEnvs["SERVER_NAME"] = "";
+	strEnvs["SERVER_PORT"] = "8081";
+	strEnvs["SERVER_PROTOCOL"] = "HTTP/1.1";
+	strEnvs["SERVER_SOFTWARE"] = "webserv/1.0";
+
+
+	/*
 	strEnvs["SERVER_SOFTWARE"] = "webserv";						// constant
 	strEnvs["GATEWAY_INTERFACE"] = "CGI/1.1";					// constant
 	strEnvs["SERVER_PROTOCOL"] = "HTTP/1.1";					// constant
@@ -108,7 +139,7 @@ char** CGI::formEnvs() const
 	strEnvs["QUERY_STRING"] = "";							// store in Request object but need to remove chars before ? (if its presented)
 	strEnvs["CONTENT_TYPE"] = "text/html";						// store in Request object
 	strEnvs["CONTENT_LENGTH"] = "0";							// store in Request object
-	strEnvs["REMOTE_ADDR"] = "0.0.0.0";						// store in Config object
+	strEnvs["REMOTE_ADDR"] = "254.127.0.0";						// client ip
 
 	strEnvs["PATH_INFO"] = "/"; // for tester
 	// strEnvs["PATH_INFO"] = "/foo/bar.php"; // path after cgi script, request line before ? (if ? not exist - fulll line)
@@ -116,7 +147,6 @@ char** CGI::formEnvs() const
 	// strEnvs["PATH_TRANSLATED"] = "/home/foo/bar.php"; // absolute path to server + PATH_INFO
 	// strEnvs["SCRIPT_NAME"] = "test.php"; // file without full path
 
-	/*
 	// add headers (this headers started with HTTP_, and - replaced by _)
 	 for (iterator it = request->headers.begin(); it != request->headers.end(); it++) {
 	 	std::string header = it->first;
