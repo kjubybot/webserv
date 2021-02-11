@@ -171,7 +171,7 @@ Response Host::processRequest(const Request& r) {
          return ret;
      }
      else if (r.getMethod() == "POST") {
-     	CGI cgi("cgi_tester", "./html/test.php");
+     	CGI cgi("cgi_tester", r.getPath(), r);
 //     	try {
 			std::string resp = cgi.processCGI();
 			ret = Response::fromStringNoBody("200", "OK", r.getContent());

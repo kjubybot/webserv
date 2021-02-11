@@ -24,8 +24,12 @@ void Config::parseConfig()
 
 	std::vector<std::string> lines;
 	std::string tmp;
-	while (get_next_line(fd, tmp))
+	while (get_next_line(fd, tmp)) {
+		if (tmp.find_first_of('#') != std::string::npos)
+			tmp = tmp.substr(0, tmp.find_first_of('#'));
 		lines.push_back(tmp);
+	}
+
 	if (!skipWS(tmp).empty())
 		lines.push_back(tmp);
 
@@ -85,10 +89,9 @@ void Config::parseServerBlock(std::vector<std::string> lines, size_t* endBlockPo
 			this->_servers.clear();
 			throw std::runtime_error("error occurred in config: line " + std::to_string(*endBlockPos + 1));
 		}
-		else if (this->_servers.back()._root == "")
+		if (this->_servers.back()._root == "")
 			this->_servers.back()._root = ".";
-		else
-			fillLocationsDefault();
+		fillLocationsDefault();
 	}
 }
 
@@ -122,7 +125,7 @@ void Config::parseServerBlockDirectives(std::vector<std::string> line, size_t en
 			}
 		}
 		else if (line[0] == "listen") {
-			if (line.size() == 2 && validateListen(line[1]) && this->_servers.back()._host == "") {
+			if (line.size() == 2 && validateListen(line[1]) && this->_servers.back()._host.empty()) {
 				this->_servers.back()._host = line[1].substr(0, line[1].find(":"));
 				this->_servers.back()._port = line[1].substr(line[1].find(":") + 1);
 			}
@@ -140,7 +143,7 @@ void Config::parseServerBlockDirectives(std::vector<std::string> line, size_t en
 			}
 		}
 		else if (line[0] == "max_body_size") {
-			if (this->_servers.back()._maxBodySize == "" && line.size() == 2 && validateMaxBodySize(line[1]))
+			if (this->_servers.back()._maxBodySize.empty() && line.size() == 2 && validateMaxBodySize(line[1]))
 				this->_servers.back()._maxBodySize = line[1];
 			else {
 				this->_servers.clear();
@@ -148,7 +151,7 @@ void Config::parseServerBlockDirectives(std::vector<std::string> line, size_t en
 			}
 		}
 		else if (line[0] == "root") {
-			if (line.size() == 2 && this->_servers.back()._root == "")
+			if (line.size() == 2 && this->_servers.back()._root.empty())
 				this->_servers.back()._root = line[1];
 			else {
 				this->_servers.clear();
@@ -210,7 +213,7 @@ void Config::parseLocationBlockDirectives(std::vector<std::string> line, size_t 
 	locationBlockDirectives.push_back("root"); locationBlockDirectives.push_back("index");
 	locationBlockDirectives.push_back("autoindex"); locationBlockDirectives.push_back("method");
 	locationBlockDirectives.push_back("cgi_extensions"); locationBlockDirectives.push_back("cgi_path");
-	locationBlockDirectives.push_back("upload_storage");
+	locationBlockDirectives.push_back("upload_storage"); locationBlockDirectives.push_back("max_body_size");
 	bool isValidDirective = false;
 
 	std::vector<std::string>::iterator it = locationBlockDirectives.begin();
@@ -227,7 +230,7 @@ void Config::parseLocationBlockDirectives(std::vector<std::string> line, size_t 
 	}
 	else {
 		if (line[0] == "root") {
-			if (this->_servers.back()._locations.back()._root == "" && line.size() == 2)
+			if (this->_servers.back()._locations.back()._root.empty() && line.size() == 2)
 				this->_servers.back()._locations.back()._root = line[1];
 			else {
 				this->_servers.clear();
@@ -246,7 +249,7 @@ void Config::parseLocationBlockDirectives(std::vector<std::string> line, size_t 
 			}
 		}
 		else if (line[0] == "autoindex") {
-			if (this->_servers.back()._locations.back()._autoIndex == "" &&
+			if (this->_servers.back()._locations.back()._autoIndex.empty() &&
 				line.size() == 2 && (line[1] == "on" || line[1] == "off"))
 				this->_servers.back()._locations.back()._autoIndex = line[1];
 			else {
@@ -277,15 +280,23 @@ void Config::parseLocationBlockDirectives(std::vector<std::string> line, size_t 
 			}
 		}
 		else if (line[0] == "cgi_path") {
-			if (this->_servers.back()._locations.back()._cgiPath == "" && line.size() == 2)
+			if (this->_servers.back()._locations.back()._cgiPath.empty() && line.size() == 2)
 				this->_servers.back()._locations.back()._cgiPath = line[1];
 			else {
 				this->_servers.clear();
 				throw std::runtime_error("error occurred in config: line " + std::to_string(endBlockPos + 1));
 			}
 		}
+		else if (line[0] == "max_body_size") {
+			if (this->_servers.back()._locations.back()._maxBodySize.empty() && line.size() == 2  && validateMaxBodySize(line[1]))
+				this->_servers.back()._locations.back()._maxBodySize = line[1];
+			else {
+				this->_servers.clear();
+				throw std::runtime_error("error occurred in config: line " + std::to_string(endBlockPos + 1));
+			}
+		}
 		else {
-			if (this->_servers.back()._locations.back()._uploadPath == "" && line.size() == 2)
+			if (this->_servers.back()._locations.back()._uploadPath.empty() && line.size() == 2)
 				this->_servers.back()._locations.back()._uploadPath = line[1];
 			else {
 				this->_servers.clear();
@@ -299,13 +310,15 @@ void Config::fillLocationsDefault()
 {
 	std::list<ConfigServer::ConfigLocation>::iterator it;
 	for (it = this->_servers.back()._locations.begin(); it != this->_servers.back()._locations.end(); it++) {
-		if (it->_root == "") {
+		if (it->_root.empty()) {
 			it->_root = this->_servers.back()._root;
 		}
 		if (it->_index.size() == 0) {
 			it->_index = this->_servers.back()._index;
 		}
-		it->_maxBodySize = this->_servers.back().getMaxBodySize();
+		if (it->_maxBodySize.empty()) {
+			it->_maxBodySize = this->_servers.back()._maxBodySize;
+		}
 	}
 }
 
@@ -439,8 +452,14 @@ uint64_t Config::ConfigServer::getMaxBodySize() const
 	exponentAccord["M"] = pow(2, 10) * exponentAccord["K"];
 	exponentAccord["G"] = pow(2, 10) * exponentAccord["M"];
 	if (!(this->_maxBodySize.empty())) {
-		int num = std::stoi(this->_maxBodySize.substr(0, this->_maxBodySize.size() - 1));
-		uint64_t result = (uint64_t) num * exponentAccord[this->_maxBodySize.substr(this->_maxBodySize.size() - 1)];
+		uint64_t result;
+		std::string exponent = this->_maxBodySize.substr(this->_maxBodySize.size() - 1);
+		if (exponent == "K" || exponent == "M" || exponent == "G") {
+			int num = std::stoi(this->_maxBodySize.substr(0, this->_maxBodySize.size() - 1));
+			result = (uint64_t) num * exponentAccord[this->_maxBodySize.substr(this->_maxBodySize.size() - 1)];
+		}
+		else
+			result = std::stoi(this->_maxBodySize);
 		return (result);
 	}
 	else
@@ -449,7 +468,6 @@ uint64_t Config::ConfigServer::getMaxBodySize() const
 
 std::list<Config::ConfigServer::ConfigLocation> Config::ConfigServer::getLocations() const
 { return (this->_locations); }
-
 
 std::string Config::ConfigServer::ConfigLocation::getName() const
 { return (this->_name); }
@@ -476,7 +494,26 @@ std::string Config::ConfigServer::ConfigLocation::getUploadPath() const
 { return (this->_uploadPath); }
 
 uint64_t Config::ConfigServer::ConfigLocation::getMaxBodySize() const
-{ return (this->_maxBodySize); }
+{
+	std::map<std::string, size_t> exponentAccord;
+	exponentAccord[""] = 1;
+	exponentAccord["K"] = pow(2, 10) * exponentAccord[""];
+	exponentAccord["M"] = pow(2, 10) * exponentAccord["K"];
+	exponentAccord["G"] = pow(2, 10) * exponentAccord["M"];
+	if (!(this->_maxBodySize.empty())) {
+		uint64_t result;
+		std::string exponent = this->_maxBodySize.substr(this->_maxBodySize.size() - 1);
+		if (exponent == "K" || exponent == "M" || exponent == "G") {
+			int num = std::stoi(this->_maxBodySize.substr(0, this->_maxBodySize.size() - 1));
+			result = (uint64_t) num * exponentAccord[this->_maxBodySize.substr(this->_maxBodySize.size() - 1)];
+		}
+		else
+			result = std::stoi(this->_maxBodySize);
+		return (result);
+	}
+	else
+		return (0);
+}
 
 std::queue<Config::ConfigServer> Config::getServersQueue() const
 {

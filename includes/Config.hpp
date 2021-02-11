@@ -24,7 +24,7 @@ public :
 			std::vector<std::string>	_cgiExtensions;
 			std::string 				_cgiPath;
 			std::string 				_uploadPath;
-			uint64_t					_maxBodySize;
+			std::string					_maxBodySize;
 
 			std::string getName() const;
 			std::string getRoot() const;
