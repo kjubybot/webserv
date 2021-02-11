@@ -95,7 +95,7 @@ Host& Connection::matchHost(const Request& request) {
 void Connection::checkHeaders(Request& request) {
     Host host = matchHost(request);
 
-    if (host.getMaxBodySize() < request.getContentLen())
+    if (host.getMaxBodySize() != 0 && host.getMaxBodySize() < request.getContentLen())
         request.addError("413", "Request Entity Too Large");
 }
 
