@@ -18,8 +18,8 @@ class CGI
 private :
 	std::string _cgiPath;
 	std::string _cgiSource;
-	Request request;
 	// Config		_config;
+	Request 	_request;
 
 	CGI();
 	CGI& operator= (const CGI& cgi);
@@ -27,9 +27,12 @@ private :
 	std::string executeCGI();
 	char** formArgs() const;
 	char** formEnvs() const;
+	std::vector<std::string> splitUri(const std::string& uri) const;
+	std::string decode(const std::string& input) const;
 
 public :
-	explicit CGI(const std::string& path, const std::string& source, const Request& request);
+	explicit CGI(const std::string& path, const std::string& source, const Request& request); //, Config& config);
+
 	~CGI();
 	CGI(const CGI& cgi);
 
