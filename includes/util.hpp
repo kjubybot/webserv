@@ -21,4 +21,12 @@ std::string skipWS(const std::string &str);
 uint64_t pow(int num, size_t pow);
 std::string joinPath(const std::string& a, const std::string& b);
 
+template <class T>
+bool isIn(std::vector<T>& vec, T val) {
+    for (typename std::vector<T>::iterator it = vec.begin(); it != vec.end(); ++it)
+        if (val == *it)
+            return true;
+    return false;
+}
+
 #endif

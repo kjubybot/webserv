@@ -119,6 +119,17 @@ Response Host::processRequest(const Request& r) {
         realRoot = root;
     else
         realRoot = locIt->_root;
+    if (locIt != locations.end() && !isIn(locIt->_allowedMethods, r.getMethod())) {
+        ret = makeError("405", "Method Not Allowed", realRoot);
+        std::string allow;
+        for (size_t i = 0; i < locIt->_allowedMethods.size(); ++i) {
+            allow += locIt->_allowedMethods[i];
+            if (i + 1 != locIt->_allowedMethods.size())
+                allow += ", ";
+        }
+        ret.setHeader("Allow", allow);
+        return ret;
+    }
     if (r.isFlagError())
         return makeError(r.getError().first, r.getError().second, realRoot);
     fullPath = joinPath(realRoot, r.getPath());

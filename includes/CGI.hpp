@@ -31,12 +31,12 @@ private :
 	std::string decode(const std::string& input) const;
 
 public :
-
 	explicit CGI(const std::string& path, const std::string& source, const Request& request); //, Config& config);
+
 	~CGI();
 	CGI(const CGI& cgi);
 
-	std::string processCGI();
+	std::string processCGI(const Request& request);
 	const std::string& getPath() const;
 	const std::string& getSource() const;
 };
