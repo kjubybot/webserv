@@ -17,6 +17,8 @@
 #include "Response.hpp"
 #include "util.hpp"
 
+#define IOSIZE (1 << 19)
+
 class Connection {
     int sock;
     struct sockaddr_in sockAddr;

@@ -191,7 +191,10 @@ Response Host::processRequest(const Request& r) {
      } else if (r.getMethod() == "PUT") {
          int fd;
          if (locIt != locations.end())
-             fullPath = joinPath(realRoot, joinPath(locIt->_uploadPath, uri));
+             fullPath = joinPath(realRoot, locIt->_uploadPath);
+         if (stat(fullPath.c_str(), &fStat) && mkdir(fullPath.c_str(), 0755))
+             return makeError("501", "Internal Server Error", realRoot);
+         fullPath = joinPath(fullPath, uri);
          if (stat(fullPath.c_str(), &fStat)) {
              fd = open(fullPath.c_str(), O_WRONLY | O_CREAT, 0664);
              write(fd, r.getContent().data(), r.getContent().length());
