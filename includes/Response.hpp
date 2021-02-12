@@ -1,12 +1,14 @@
 #ifndef WEBSERV_RESPONSE_HPP
 #define WEBSERV_RESPONSE_HPP
 
+#include <algorithm>
 #include <fcntl.h>
 #include <map>
 #include <string>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include "util.hpp"
 
 class Response {
     std::string code;
@@ -20,7 +22,7 @@ class Response {
 public:
     Response();
     Response(const std::string& code);
-    Response(const std::string& code, const std::string& body);
+//    Response(const std::string& code, const std::string& body);
     Response(const Response& r);
     Response &operator=(const Response& r);
     ~Response();
@@ -29,6 +31,8 @@ public:
     static Response fromFileNoBody(const std::string& code, const std::string& message, const std::string& filename);
     static Response fromString(const std::string& code, const std::string& message, const std::string& body);
     static Response fromStringNoBody(const std::string& code, const std::string& message, const std::string& body);
+    static Response fromCGI(const std::string& cgiResponse);
+
     std::string getData();
     void setCode(const std::string& code);
     void setMessage(const std::string& message);

@@ -123,6 +123,7 @@ void Server::startServer() {
             for (std::list<int>::iterator it = sockets.begin(); it != sockets.end(); ++it) {
                 if (FD_ISSET(*it, &rfds)) {
                     int newSock = accept(*it, (struct sockaddr *) &sockAddr, &sockLen);
+//                    fcntl(newSock, F_SETFL, O_NONBLOCK);
                     if (newSock < 0)
                         std::cerr << "Unable too create connection: " << strerror(errno) << std::endl;
                     else {

@@ -2,7 +2,7 @@
 
 Connection::Connection(int sock, struct sockaddr_in sockAddr, std::list<Host> hosts)
         : sock(sock), sockAddr(sockAddr), _isOpen(true), hosts(hosts) {
-    std::cout << "Connection from " << iptoa(sockAddr.sin_addr.s_addr) << std::endl;
+//    std::cout << "Connection from " << iptoa(sockAddr.sin_addr.s_addr) << std::endl;
 }
 
 Connection::~Connection() {
@@ -26,19 +26,19 @@ struct sockaddr_in Connection::getSockAddr() const {
 }
 
 void Connection::readData() {
-    char buf[4096];
-    int r = read(sock, buf, 4096);
+    char buf[IOSIZE];
+    int r = read(sock, buf, IOSIZE);
     if (r > 0) {
         rdata.append(buf, r);
         while (!rdata.empty()) {
             if (requests.empty() || requests.back().isSecondPart())
-                requests.push(Request());
+                requests.push(Request(sockAddr));
             if (!requests.back().isFirstPart() && rdata.find("\r\n\r\n") == std::string::npos)
                 return;
             requests.back().parse(rdata);
-            checkHeaders(requests.back());
             if (!requests.back().isSecondPart())
                 return;
+            checkHeaders(requests.back());
             if (requests.back().isFlagError()) {
                 _isOpen = false;
                 return;
@@ -48,7 +48,7 @@ void Connection::readData() {
         _isOpen = false;
         if (r == 0 && !rdata.empty()) {
             if (requests.empty() || requests.back().isSecondPart())
-                requests.push(Request());
+                requests.push(Request(sockAddr));
             requests.back().parse(rdata);
             if (!requests.back().isSecondPart())
                 requests.back().addError("400", "Bad request");
@@ -63,7 +63,7 @@ void Connection::writeData() {
         responses.pop();
     }
     if (!wdata.empty()) {
-        wdata.erase(0, write(sock, wdata.data(), wdata.length() > 4096 ? 4096 : wdata.length()));
+        wdata.erase(0, write(sock, wdata.data(), wdata.length() > IOSIZE ? IOSIZE : wdata.length()));
     }
 }
 
@@ -95,7 +95,7 @@ Host& Connection::matchHost(const Request& request) {
 void Connection::checkHeaders(Request& request) {
     Host host = matchHost(request);
 
-    if (host.getMaxBodySize() < request.getContentLen())
+    if (host.getMaxBodySize(request) != 0 && host.getMaxBodySize(request) < request.getContentLen())
         request.addError("413", "Request Entity Too Large");
 }
 

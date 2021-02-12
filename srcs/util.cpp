@@ -25,9 +25,14 @@ std::string trim(const std::string& s) {
         ++pos;
     if (pos == s.length())
         return std::string();
-    len = 0;
-    while (len + pos < s.length() && !isspace(s[len + pos]))
+    len = s.length() - 1;
+    while (len > pos && isspace(s[len]))
+        --len;
+    if (len == pos && isspace(s[pos]))
+        return std::string();
+    else
         ++len;
+    len -= pos;
     return s.substr(pos, len);
 }
 
@@ -64,12 +69,12 @@ std::string iptoa(uint32_t addr) {
 std::string getFileContent(const std::string& filename)
 {
 	int fd = open(filename.c_str(), O_RDONLY);
+	int r;
 	std::string result;
-	std::string tmp;
-	while (get_next_line(fd, tmp))
-		result += tmp + "\n";
-	if (tmp != "")
-		result += tmp;
+	char buf[BUFF_SIZE];
+	while ((r = read(fd, buf, BUFF_SIZE)))
+		result.append(buf, r);
+	close(fd);
 	return (result);
 }
 

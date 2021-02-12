@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#define BUFF_SIZE 4096
+#define BUFF_SIZE (1 << 19)
 
 int get_next_line(int fd, std::string& line);
 std::string trim(const std::string& s);

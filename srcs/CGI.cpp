@@ -11,27 +11,27 @@ CGI::CGI(const CGI& cgi)
 	: _cgiPath(cgi._cgiPath), _cgiSource(cgi._cgiSource), _request(cgi._request)
 { }
 
-std::string CGI::processCGI(const Request& request)
+std::string CGI::processCGI(const Host& host)
 {
 	std::string result;
 
 	try {
-		result = executeCGI();
+		result = executeCGI(host);
 	}
 	catch (const std::exception& ex) {
-		std::cerr << "CGI exception: " << ex.what() << std::endl; // 500 internal error in host generated
+		std::cerr << "CGI exception: " << ex.what() << std::endl;
 	}
 	return (result);
 }
 
-std::string CGI::executeCGI()
+std::string CGI::executeCGI(const Host& host)
 {
 	int		fd[2];
 	pid_t	pid;
 	int 	exec_status = 0;
 	int		status = 0;
 	char** args = formArgs();
-	char** envs = formEnvs();
+	char** envs = formEnvs(host);
 
 	if (pipe(fd) < 0)
 		throw std::runtime_error("pipe fails");
@@ -41,18 +41,20 @@ std::string CGI::executeCGI()
 	}
 	else if (pid > 0) {
 		close(fd[0]);
-		// write(fd[0], content, content-length);
+		write(fd[1], this->_request.getContent().c_str(), this->_request.getContent().length());
 		close(fd[1]);
 		waitpid(pid, &status, 0);
 		if (WIFEXITED(status))
 			status = WEXITSTATUS(status);
 		if (status)
-			throw std::runtime_error("CGI fails");
+			throw std::runtime_error("script execution failed");
 	}
 	else {
 		close(fd[1]);
 		int outputFd = open("./cgi_response", O_RDWR | O_CREAT | O_TRUNC,
 			S_IRWXU | S_IRGRP | S_IROTH);
+		if (outputFd < 0)
+			throw std::runtime_error("open fails");
 		if (dup2(fd[0], 0) < 0)
 			throw std::runtime_error("dup2 fails");
 		if (dup2(outputFd, 1) < 0)
@@ -76,7 +78,7 @@ char** CGI::formArgs() const
 	return (args);
 }
 
-char** CGI::formEnvs() const
+char** CGI::formEnvs(const Host& host) const
 {
 	std::map<std::string, std::string> strEnvs;
 
@@ -85,7 +87,7 @@ char** CGI::formEnvs() const
 			.at("authorization"), " ");
 		strEnvs["AUTH_TYPE"] = authVec[0];
 		if (authVec[0] == "Basic") {
-			std::vector<std::string> splitBase64 = split(decode(authVec[1]), ":");
+			std::vector<std::string> splitBase64 = split(decodeBase64(authVec[1]), ":");
 			strEnvs["REMOTE_USER"] = splitBase64[0];
 			strEnvs["REMOTE_IDENT"] = splitBase64[1];
 		}
@@ -94,10 +96,7 @@ char** CGI::formEnvs() const
 			strEnvs["REMOTE_IDENT"] = "";
 		}
 	}
-
-	//
-	strEnvs["REMOTE_ADDR"] = "127.0.0.1"; // client ip
-
+	strEnvs["REMOTE_ADDR"] = iptoa(this->_request.getSockAddr().sin_addr.s_addr);
 	strEnvs["CONTENT_LENGTH"] = this->_request.getContent().length() != 0 ?
 		std::to_string(this->_request.getContent().length()) : "";
 	strEnvs["CONTENT_TYPE"] = this->_request.getHeaders().count("content-type") ?
@@ -105,61 +104,77 @@ char** CGI::formEnvs() const
 	strEnvs["GATEWAY_INTERFACE"] = "CGI/1.1";
 	strEnvs["SERVER_PROTOCOL"] = "HTTP/1.1";
 	strEnvs["SERVER_SOFTWARE"] = "webserv/1.0";
-
-	//
-	strEnvs["SERVER_NAME"] = "localhost"; // set in config
-	strEnvs["SERVER_PORT"] = "8081"; // set in config
-
+	strEnvs["SERVER_NAME"] = host.getName();
+	strEnvs["SERVER_PORT"] = std::to_string(host.getPort());
 	strEnvs["REQUEST_METHOD"] = this->_request.getMethod();
 
+	char pwd[1024];
+	getcwd(pwd, 1024);
+	std::string requestUri, pathInfo, queryStr, requestPath;
+	if (this->_request.getPath().find_first_of('?') != std::string::npos) {
+		requestPath = this->_request.getPath().substr(0, this->_request.getPath().find_first_of('?'));
+		queryStr = this->_request.getPath().substr(this->_request.getPath().find_first_of('?') + 1);
+	}
+	else {
+		requestPath = this->_request.getPath();
+		queryStr = "";
+	}
+	std::vector<std::string> splitPath = split(requestPath, "/");
 
-
-	// PATH_INFO
-	//PATH_TRANSLATED
-	//QUERY_STRING
-	//REQUEST_URI
-	//SCRIPT_NAME
-
-
-
-
-
-
-//	getcwd(pwd, 1024);
-//	strEnvs["PATH_INFO"] = std::string()
-
-
-/*
-	// add headers (this headers started with HTTP_, and - replaced by _)
-	 for (iterator it = request->headers.begin(); it != request->headers.end(); it++) {
-	 	std::string header = it->first;
-	 	header.replace(header.find("-"), 1, "_");
-	 	std::transform(str.begin(), str.end(),str.begin(), toupper);
-	 	if (strEnvs.count(header) == 0)
-	 		strEnvs["HTTP_" + header] = it->second;
+	std::vector<std::string>::iterator it;
+	std::string path(pwd);
+	struct stat stat_buff;
+	for (it = splitPath.begin(); it != splitPath.end(); it++) {
+		path += "/" + *it;
+		requestUri += "/" + *it;
+		stat(path.c_str(), &stat_buff);
+		if (S_ISREG(stat_buff.st_mode) == true) {
+			break ;
+		}
 	}
 
-	// add passed to main envs
-	 size_t i = 0;
-	 while (mainEnvs[i] != NULL) {
-	 	std::string env(mainEnvs[i]);
-	 	std::string key = env.substr(0, env.find("="));
-	 	std::string value = env.substr(env.find("=") + 1);
-	 	strEnvs[key] = value;
-	 	i++;
-	 }
-*/
+	/*
+	// rfc logic
+	if (it == splitPath.end()) {
+		throw std::runtime_error("404"); // not found ???
+	}
+	else if (it == --splitPath.end()) {
+		pathInfo = requestUri;
+	}
+	else {
+		for (std::vector<std::string>::iterator jt = it + 1; jt != splitPath.end(); jt++)
+			pathInfo += "/" + *jt;
+	}
+	*/
+
+	// for tester
+	pathInfo = requestUri;
+
+	strEnvs["REQUEST_URI"] = requestUri;
+	strEnvs["QUERY_STRING"] = queryStr;
+	strEnvs["SCRIPT_NAME"] = requestUri.substr(requestUri.find_last_of('/'));
+	strEnvs["PATH_INFO"] = pathInfo;
+	strEnvs["PATH_TRANSLATED"] = pwd + pathInfo;
+
+	std::map<std::string, std::string> requestHeaders = this->_request.getHeaders();
+	for (std::map<std::string, std::string>::iterator jt = requestHeaders.begin(); jt != requestHeaders.end(); jt++) {
+		std::string header = jt->first;
+		if (header.find("-") != std::string::npos)
+			header.replace(header.find("-"), 1, "_");
+		std::transform(header.begin(), header.end(), header.begin(), toupper);
+		strEnvs["HTTP_" + header] = jt->second;
+	}
 
 	char** envs = new char* [strEnvs.size() + 1];
 	size_t i = 0;
-	for (std::map<std::string, std::string>::iterator it = strEnvs.begin(); it != strEnvs.end(); it++)
-		envs[i++] = stringDup(it->first + "=" + it->second);
+	for (std::map<std::string, std::string>::iterator jt = strEnvs.begin(); jt != strEnvs.end(); jt++)
+		envs[i++] = stringDup(jt->first + "=" + jt->second);
 	envs[i] = NULL;
 
 	return (envs);
 }
 
-std::string CGI::decode(const std::string& input) const
+std::string CGI::decodeBase64(const std::string& input) const
 {
 	char base64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 	std::string result;
@@ -174,25 +189,11 @@ std::string CGI::decode(const std::string& input) const
 		val = (val << 6) + base[input[i]];
 		valb += 6;
 		if (valb >= 0) {
-			result.push_back(char((val >> valb) & 0xFF));
+			result.push_back(char((val >> valb) & 0xff));
 			valb -= 8;
 		}
 	}
 	return result;
-}
-
-std::vector<std::string> CGI::splitUri(const std::string& uri) const
-{
-	std::vector<std::string> uriElems;
-	if (uri.find_first_of('?') != std::string::npos) {
-		uriElems.push_back(uri.substr(0, uri.find_first_of('?')));
-		uriElems.push_back(uri.substr(uri.find_first_of('?') + 1));
-	}
-	else {
-		uriElems.push_back(uri);
-		uriElems.push_back("");
-	}
-	return (uriElems);
 }
 
 const std::string& CGI::getPath() const
