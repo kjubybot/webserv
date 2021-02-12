@@ -178,5 +178,6 @@ Response Response::fromCGI(const std::string& cgiResponse) {
         status.erase(0, crlf + 2);
     }
     ret.body = status;
+    ret.headers["content-length"] = std::to_string(ret.body.length());
     return ret;
 }

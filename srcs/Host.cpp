@@ -216,7 +216,8 @@ Response Host::processRequest(const Request& r) {
              std::cout << resp << std::endl;
              return Response::fromCGI(resp);
          }
-         return makeError("403", "Forbidden", realRoot);
+		 return Response::fromStringNoBody("200", "OK", "");
+         //return makeError("403", "Forbidden", realRoot);
      } else
          return makeError("501", "Not Implemented", realRoot);
 }

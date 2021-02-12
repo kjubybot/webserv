@@ -105,23 +105,25 @@ char** CGI::formEnvs(const Host& host) const
 	strEnvs["SERVER_PROTOCOL"] = "HTTP/1.1";
 	strEnvs["SERVER_SOFTWARE"] = "webserv/1.0";
 	strEnvs["SERVER_NAME"] = host.getName();
-	strEnvs["SERVER_PORT"] = host.getPort();
+	strEnvs["SERVER_PORT"] = std::to_string(host.getPort());
 	strEnvs["REQUEST_METHOD"] = this->_request.getMethod();
 
 
 	// getcwd(pwd, 1024);
 	strEnvs["PATH_INFO"] = this->_request.getPath();
 	//PATH_TRANSLATED
-	strEnvs["REQUEST_URI"] = splitUri(this->_request.getPath()).at(0);
-	strEnvs["QUERY_STRING"] = splitUri(this->_request.getPath()).at(1);
-	strEnvs["SCRIPT_NAME"] = "/" + splitUri(this->_request.getPath()).at(0);
+	std::vector<std::string> uriElems = splitUri(this->_request.getPath());
+	strEnvs["REQUEST_URI"] = uriElems[0];
+	strEnvs["QUERY_STRING"] = uriElems[1];
+	strEnvs["SCRIPT_NAME"] = uriElems[0][0] == '/' ? uriElems[0] : "/" + uriElems[0];
 
 
 	std::map<std::string, std::string> requestHeaders = this->_request.getHeaders();
 	for (std::map<std::string, std::string>::iterator it = requestHeaders.begin(); it != requestHeaders.end(); it++) {
 		std::string header = it->first;
-		header.replace(header.find("-"), 1, "_");
-		std::transform(header.begin(), header.end(),header.begin(), toupper);
+		if (header.find("-") != std::string::npos)
+			header.replace(header.find("-"), 1, "_");
+		std::transform(header.begin(), header.end(), header.begin(), toupper);
 		strEnvs["HTTP_" + header] = it->second;
 	}
 
