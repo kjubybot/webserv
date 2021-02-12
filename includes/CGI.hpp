@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include "Request.hpp"
 #include "util.hpp"
 
@@ -27,7 +28,6 @@ private :
 	std::string executeCGI(const Host& host);
 	char** formArgs() const;
 	char** formEnvs(const Host& host) const;
-	std::vector<std::string> splitUri(const std::string& uri) const;
 	std::string decodeBase64(const std::string& input) const;
 
 public :

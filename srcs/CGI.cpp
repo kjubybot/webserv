@@ -19,7 +19,7 @@ std::string CGI::processCGI(const Host& host)
 		result = executeCGI(host);
 	}
 	catch (const std::exception& ex) {
-		std::cerr << "CGI exception: " << ex.what() << std::endl; // 500 internal error in host generated
+		std::cerr << "CGI exception: " << ex.what() << std::endl;
 	}
 	return (result);
 }
@@ -47,7 +47,7 @@ std::string CGI::executeCGI(const Host& host)
 		if (WIFEXITED(status))
 			status = WEXITSTATUS(status);
 		if (status)
-			throw std::runtime_error("CGI fails");
+			throw std::runtime_error("script execution failed");
 	}
 	else {
 		close(fd[1]);
@@ -108,31 +108,67 @@ char** CGI::formEnvs(const Host& host) const
 	strEnvs["SERVER_PORT"] = std::to_string(host.getPort());
 	strEnvs["REQUEST_METHOD"] = this->_request.getMethod();
 
+	char pwd[1024];
+	getcwd(pwd, 1024);
+	std::string requestUri, pathInfo, queryStr, requestPath;
+	if (this->_request.getPath().find_first_of('?') != std::string::npos) {
+		requestPath = this->_request.getPath().substr(0, this->_request.getPath().find_first_of('?'));
+		queryStr = this->_request.getPath().substr(this->_request.getPath().find_first_of('?') + 1);
+	}
+	else {
+		requestPath = this->_request.getPath();
+		queryStr = "";
+	}
+	std::vector<std::string> splitPath = split(requestPath, "/");
 
-	// getcwd(pwd, 1024);
-	strEnvs["PATH_INFO"] = this->_request.getPath();
-	//PATH_TRANSLATED
-	std::vector<std::string> uriElems = splitUri(this->_request.getPath());
-	strEnvs["REQUEST_URI"] = uriElems[0];
-	strEnvs["QUERY_STRING"] = uriElems[1];
-	strEnvs["SCRIPT_NAME"] = uriElems[0][0] == '/' ? uriElems[0] : "/" + uriElems[0];
+	std::vector<std::string>::iterator it;
+	std::string path(pwd);
+	struct stat stat_buff;
+	for (it = splitPath.begin(); it != splitPath.end(); it++) {
+		path += "/" + *it;
+		requestUri += "/" + *it;
+		stat(path.c_str(), &stat_buff);
+		if (S_ISREG(stat_buff.st_mode) == true) {
+			break ;
+		}
+	}
 
+	/*
+	// rfc logic
+	if (it == splitPath.end()) {
+		throw std::runtime_error("404"); // not found ???
+	}
+	else if (it == --splitPath.end()) {
+		pathInfo = requestUri;
+	}
+	else {
+		for (std::vector<std::string>::iterator jt = it + 1; jt != splitPath.end(); jt++)
+			pathInfo += "/" + *jt;
+	}
+	*/
+
+	// for tester
+	pathInfo = requestUri;
+
+	strEnvs["REQUEST_URI"] = requestUri;
+	strEnvs["QUERY_STRING"] = queryStr;
+	strEnvs["SCRIPT_NAME"] = requestUri.substr(requestUri.find_last_of('/'));
+	strEnvs["PATH_INFO"] = pathInfo;
+	strEnvs["PATH_TRANSLATED"] = pwd + pathInfo;
 
 	std::map<std::string, std::string> requestHeaders = this->_request.getHeaders();
-	for (std::map<std::string, std::string>::iterator it = requestHeaders.begin(); it != requestHeaders.end(); it++) {
-		std::string header = it->first;
+	for (std::map<std::string, std::string>::iterator jt = requestHeaders.begin(); jt != requestHeaders.end(); jt++) {
+		std::string header = jt->first;
 		if (header.find("-") != std::string::npos)
 			header.replace(header.find("-"), 1, "_");
 		std::transform(header.begin(), header.end(), header.begin(), toupper);
-		strEnvs["HTTP_" + header] = it->second;
+		strEnvs["HTTP_" + header] = jt->second;
 	}
-
-	// add passed to main envs ???
 
 	char** envs = new char* [strEnvs.size() + 1];
 	size_t i = 0;
-	for (std::map<std::string, std::string>::iterator it = strEnvs.begin(); it != strEnvs.end(); it++)
-		envs[i++] = stringDup(it->first + "=" + it->second);
+	for (std::map<std::string, std::string>::iterator jt = strEnvs.begin(); jt != strEnvs.end(); jt++)
+		envs[i++] = stringDup(jt->first + "=" + jt->second);
 	envs[i] = NULL;
 
 	return (envs);
@@ -158,20 +194,6 @@ std::string CGI::decodeBase64(const std::string& input) const
 		}
 	}
 	return result;
-}
-
-std::vector<std::string> CGI::splitUri(const std::string& uri) const
-{
-	std::vector<std::string> uriElems;
-	if (uri.find_first_of('?') != std::string::npos) {
-		uriElems.push_back(uri.substr(0, uri.find_first_of('?')));
-		uriElems.push_back(uri.substr(uri.find_first_of('?') + 1));
-	}
-	else {
-		uriElems.push_back(uri);
-		uriElems.push_back("");
-	}
-	return (uriElems);
 }
 
 const std::string& CGI::getPath() const
