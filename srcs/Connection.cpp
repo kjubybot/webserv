@@ -32,7 +32,7 @@ void Connection::readData() {
         rdata.append(buf, r);
         while (!rdata.empty()) {
             if (requests.empty() || requests.back().isSecondPart())
-                requests.push(Request());
+                requests.push(Request(sockAddr));
             if (!requests.back().isFirstPart() && rdata.find("\r\n\r\n") == std::string::npos)
                 return;
             requests.back().parse(rdata);
@@ -48,7 +48,7 @@ void Connection::readData() {
         _isOpen = false;
         if (r == 0 && !rdata.empty()) {
             if (requests.empty() || requests.back().isSecondPart())
-                requests.push(Request());
+                requests.push(Request(sockAddr));
             requests.back().parse(rdata);
             if (!requests.back().isSecondPart())
                 requests.back().addError("400", "Bad request");
@@ -95,7 +95,7 @@ Host& Connection::matchHost(const Request& request) {
 void Connection::checkHeaders(Request& request) {
     Host host = matchHost(request);
 
-    if (host.getMaxBodySize() != 0 && host.getMaxBodySize() < request.getContentLen())
+    if (host.getMaxBodySize(request) != 0 && host.getMaxBodySize(request) < request.getContentLen())
         request.addError("413", "Request Entity Too Large");
 }
 

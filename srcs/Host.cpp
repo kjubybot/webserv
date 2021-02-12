@@ -85,8 +85,13 @@ std::string Host::getName() const {
 const std::map<std::string, std::string>& Host::getErrorPages() const
 { return (errorPages); }
 
-uint64_t Host::getMaxBodySize() const
-{ return (maxBodySize); }
+uint64_t Host::getMaxBodySize(const Request& request) {
+    std::list<conf_loc>::iterator it = matchLocation(request.getPath());
+    if (it != locations.end())
+        return it->getMaxBodySize();
+    else
+        return maxBodySize;
+}
 
 const std::string& Host::getRoot() const
 { return (root); }
@@ -115,13 +120,19 @@ Response Host::processRequest(const Request& r) {
     std::list<conf_loc>::iterator locIt;
     std::vector<std::string> indexes;
 
+
+//    std::cout << "Processing request: " << std::endl;
+//    std::cout << "Method: " << r.getMethod() << std::endl;
+//    std::cout << "URI: " << r.getPath() << std::endl;
+//    std::cout << "Content: \n" << r.getContent() << std::endl;
+
     if ((locIt = matchLocation(r.getPath())) == locations.end()) {
         realRoot = root;
         uri = r.getPath();
     } else {
         realRoot = locIt->_root;
         if (r.getPath().length() > 0)
-            uri = r.getPath().substr(locIt->_name.length() - (locIt->_name[locIt->_name.length() - 1] == '/' ? 1 : 0));
+            uri = r.getPath().substr(locIt->_name.rfind('/'));
         else
             uri = r.getPath();
     }
@@ -139,7 +150,7 @@ Response Host::processRequest(const Request& r) {
         return ret;
     }
     fullPath = joinPath(realRoot, uri);
-    std::cout << fullPath << std::endl;
+
      if (r.getMethod() == "GET" || r.getMethod() == "HEAD") {
          if (stat(fullPath.c_str(), &fStat))
              return makeError("404", "Not Found", realRoot);
@@ -151,7 +162,6 @@ Response Host::processRequest(const Request& r) {
              if (!indexes.empty()) {
                  for (size_t i = 0; i < index.size(); ++i) {
                      indexPath = joinPath(fullPath, index[i]);
-                     std::cout << indexPath << std::endl;
                      if (stat(indexPath.c_str(), &fStat) == 0) {
                          if (r.getMethod() == "GET")
                              return Response::fromFile("200", "OK", indexPath);
@@ -175,35 +185,30 @@ Response Host::processRequest(const Request& r) {
          }
      } else if (r.getMethod() == "PUT") {
          int fd;
+         if (locIt != locations.end())
+             fullPath = joinPath(realRoot, joinPath(locIt->_uploadPath, uri));
          if (stat(fullPath.c_str(), &fStat)) {
-             fd = open(fullPath.c_str(), O_WRONLY | O_CREAT);
+             fd = open(fullPath.c_str(), O_WRONLY | O_CREAT, 0664);
              write(fd, r.getContent().data(), r.getContent().length());
              close(fd);
              ret = Response::fromStringNoBody("201", "Created", "");
-             ret.setHeader("Location", "http://" + joinPath(names.front(), r.getPath()));
+             ret.setHeader("Location", "http://" + joinPath(names.front(), joinPath(locIt->_uploadPath, r.getPath())));
          } else {
              fd = open(fullPath.c_str(), O_WRONLY | O_TRUNC);
              write(fd, r.getContent().data(), r.getContent().length());
              close(fd);
-             ret = Response::fromStringNoBody("200", "OK", r.getContent());
+             ret = Response::fromStringNoBody("204", "No Content", "");
          }
          return ret;
      }
      else if (r.getMethod() == "POST") {
-     	CGI cgi("cgi_tester", r.getPath(), r);
-//     	try {
-			std::string resp = cgi.processCGI();
-			ret = Response::fromStringNoBody("200", "OK", r.getContent());
-			std::cout << "Response: " << resp << std::endl;
-		 return ret;
-//     	}
-//     	catch (const std::exception& ex) {
-//     		std::cerr << ex.what() << std::endl;
-//			return makeError("400", "Bad Request", realRoot);
-//     	}
-
-     }
-     else
+         if (uri.rfind('.') != std::string::npos && uri.substr(uri.rfind('.'), 4) == ".bla") {
+             CGI cgi("cgi_tester", fullPath, r);
+             std::string resp = cgi.processCGI();
+             std::cout << resp << std::endl;
+             return Response::fromCGI(resp);
+         }
+         return makeError("403", "Forbidden", realRoot);
+     } else
          return makeError("501", "Not Implemented", realRoot);
-    return makeError("404", "Not Found", realRoot);
 }

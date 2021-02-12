@@ -1,6 +1,7 @@
 #ifndef REQUEST_HPP
 #define REQUEST_HPP
 
+#include <arpa/inet.h>
 #include <algorithm>
 #include <iostream>
 #include <map>
@@ -15,6 +16,7 @@ class Request {
 	bool flagError;
 	uint64_t contentLen;
 	int maxBodySize;
+	struct sockaddr_in sockAddr;
 
 	std::string path;
 	std::string method;
@@ -28,7 +30,7 @@ class Request {
     int checkSymbols(char sym);
 public:
 
-    Request();
+    Request(struct sockaddr_in sockAddr);
     virtual ~Request();
 
 	void setMaxBodySize(int maxBodySize);
@@ -50,6 +52,8 @@ public:
     bool isSecondPart() const;
 
     void addError(std::string errorKey, std::string errorValue);
+
+    const sockaddr_in& getSockAddr() const;
 };
 
 #endif //REQUEST_HPP

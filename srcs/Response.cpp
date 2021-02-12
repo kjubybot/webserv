@@ -2,15 +2,17 @@
 
 Response::Response() {}
 
+#include <iostream>
 Response::Response(const std::string& code) : code(code) {
+    std::cout << "Creating response with code " << code << std::endl;
     if (code[0] == '4' || code[0] == '5')
         headers["Connection"] = "close";
 }
-
-Response::Response(const std::string& code, const std::string& body) : code(code), body(body) {
-    if (code[0] == '4' || code[0] == '5')
-        headers["Connection"] = "close";
-}
+//
+//Response::Response(const std::string& code, const std::string& body) : code(code), body(body) {
+//    if (code[0] == '4' || code[0] == '5')
+//        headers["Connection"] = "close";
+//}
 
 Response::Response(const Response& r) : code(r.code), message(r.message), body(r.body), headers(r.headers) {}
 
@@ -143,8 +145,38 @@ Response Response::fromStringNoBody(const std::string& code, const std::string& 
     Response ret(code);
 
     ret.message = message;
-    ret.headers["Content-Length"] = std::to_string(body.length());
-    ret.headers["Content-Type"] = "text/html";
-    ret.headers["Last-Modified"] = getLastModified("");
+    if (code != "204") {
+        ret.headers["Content-Length"] = std::to_string(body.length());
+        ret.headers["Content-Type"] = "text/html";
+        ret.headers["Last-Modified"] = getLastModified("");
+    }
+    return ret;
+}
+
+Response Response::fromCGI(const std::string& cgiResponse) {
+    Response ret;
+    std::string status;
+    size_t crlf;
+
+    crlf = cgiResponse.find("\r\n");
+    status = cgiResponse.substr(0, crlf);
+    status = trim(status.substr(status.find(':') + 1));
+    ret.code = status.substr(0, status.find(' '));
+    ret.message = status.substr(status.find(' ') + 1);
+    status = cgiResponse.substr(crlf + 2);
+    while (!status.empty()) {
+        std::string line, headerName, headerValue;
+        crlf = status.find("\r\n");
+        line = status.substr(0, crlf);
+        if (line.empty()) {
+            status.erase(0, crlf + 2);
+            break;
+        }
+        headerName = line.substr(0, line.find(':'));
+        headerValue = trim(line.substr(line.find(':') + 1));
+        ret.headers[headerName] = headerValue;
+        status.erase(0, crlf + 2);
+    }
+    ret.body = status;
     return ret;
 }
