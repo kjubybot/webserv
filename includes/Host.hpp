@@ -12,7 +12,8 @@
 #include "Request.hpp"
 #include "Response.hpp"
 #include "Config.hpp"
-#include "CGI.hpp"
+
+class CGI;
 
 class Host {
     typedef Config::ConfigServer::ConfigLocation conf_loc;
@@ -22,6 +23,7 @@ class Host {
 	uint64_t 											maxBodySize;
 	std::string 										root;
 	std::vector<std::string> 							index;
+	uint16_t											port;
 	std::list<conf_loc>	locations;
 
 	std::string makeAutoindex(const std::string& path) const;
@@ -41,8 +43,11 @@ public:
 	uint64_t getMaxBodySize(const Request& request);
 	const std::string& getRoot() const;
 	const std::vector<std::string>& getIndexPages() const;
+	uint16_t getPort() const;
 
     Response processRequest(const Request& r);
 };
+
+#include "CGI.hpp"
 
 #endif

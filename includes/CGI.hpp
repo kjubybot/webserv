@@ -9,36 +9,38 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include "Config.hpp"
 #include "Request.hpp"
 #include "util.hpp"
+
+class Host;
 
 class CGI
 {
 private :
 	std::string _cgiPath;
 	std::string _cgiSource;
-	// Config		_config;
 	Request 	_request;
 
 	CGI();
 	CGI& operator= (const CGI& cgi);
 
-	std::string executeCGI();
+	std::string executeCGI(const Host& host);
 	char** formArgs() const;
-	char** formEnvs() const;
+	char** formEnvs(const Host& host) const;
 	std::vector<std::string> splitUri(const std::string& uri) const;
-	std::string decode(const std::string& input) const;
+	std::string decodeBase64(const std::string& input) const;
 
 public :
-	explicit CGI(const std::string& path, const std::string& source, const Request& request); //, Config& config);
+	explicit CGI(const std::string& path, const std::string& source, const Request& request);
 
 	~CGI();
 	CGI(const CGI& cgi);
 
-	std::string processCGI();
+	std::string processCGI(const Host& host);
 	const std::string& getPath() const;
 	const std::string& getSource() const;
 };
+
+#include "Host.hpp"
 
 #endif

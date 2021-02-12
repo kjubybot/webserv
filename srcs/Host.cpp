@@ -13,6 +13,7 @@ Host::Host(const Config::ConfigServer& server)
 	maxBodySize = server.getMaxBodySize();
 	root = server.getRoot();
 	index = server.getIndexPages();
+	port = server.getPort();
 	locations = server.getLocations();
 	locations.sort(Host::forSortingByLength);
 }
@@ -21,7 +22,7 @@ Host::~Host()
 { }
 
 Host::Host(const Host& h)
-    : sockAddr(h.sockAddr), names(h.names), errorPages(h.errorPages), maxBodySize(h.maxBodySize), root(h.root), index(h.index), locations(h.locations)
+    : sockAddr(h.sockAddr), names(h.names), errorPages(h.errorPages), maxBodySize(h.maxBodySize), root(h.root), index(h.index), port(h.port), locations(h.locations)
 { }
 
 Host& Host::operator=(const Host& h) {
@@ -31,6 +32,7 @@ Host& Host::operator=(const Host& h) {
 	maxBodySize = h.maxBodySize;
 	root = h.root;
 	index = h.index;
+	port = h.port;
 	locations = h.locations;
 	return (*this);
 }
@@ -98,6 +100,9 @@ const std::string& Host::getRoot() const
 
 const std::vector<std::string>& Host::getIndexPages() const
 { return (index); }
+
+uint16_t Host::getPort() const
+{ return (port); }
 
 std::list<Config::ConfigServer::ConfigLocation>::iterator Host::matchLocation(const std::string& loc) {
     std::list<conf_loc>::iterator it = locations.begin();
@@ -204,7 +209,7 @@ Response Host::processRequest(const Request& r) {
      else if (r.getMethod() == "POST") {
          if (uri.rfind('.') != std::string::npos && uri.substr(uri.rfind('.'), 4) == ".bla") {
              CGI cgi("cgi_tester", fullPath, r);
-             std::string resp = cgi.processCGI();
+             std::string resp = cgi.processCGI(*this);
              std::cout << resp << std::endl;
              return Response::fromCGI(resp);
          }
