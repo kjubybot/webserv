@@ -57,12 +57,12 @@ std::string Host::makeAutoindex(const std::string& path) const {
     return ret;
 }
 
-Response Host::makeError(const std::string& code, const std::string& message, const std::string& root) {
+Response Host::makeError(const std::string& code, const std::string& message, const std::string& curr_root) {
     Response ret;
     struct stat fStat;
 
-    if (errorPages.find(code) != errorPages.end() && stat(joinPath(root, errorPages[code]).c_str(), &fStat) == 0)
-        ret = Response::fromFile(code, message, joinPath(root, errorPages[code]));
+    if (errorPages.find(code) != errorPages.end() && stat(joinPath(curr_root, errorPages[code]).c_str(), &fStat) == 0)
+        ret = Response::fromFile(code, message, joinPath(curr_root, errorPages[code]));
     else
         ret = Response::fromString(code, message, HttpErrorPage(code, message).createPage());
     return ret;
@@ -182,7 +182,7 @@ Response Host::processRequest(const Request& r) {
          return ret;
      }
      else if (r.getMethod() == "POST") {
-     	CGI cgi("cgi_tester", "html/test.php");
+     	CGI cgi("cgi_tester", r.getPath(), r);
 //     	try {
 			std::string resp = cgi.processCGI();
 			ret = Response::fromStringNoBody("200", "OK", r.getContent());

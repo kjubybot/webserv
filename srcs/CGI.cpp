@@ -1,14 +1,14 @@
 #include "CGI.hpp"
 
-CGI::CGI(const std::string& path, const std::string& source)
-	: _cgiPath(path), _cgiSource(source)
+CGI::CGI(const std::string& path, const std::string& source, const Request& request)
+	: _cgiPath(path), _cgiSource(source), _request(request)
 { }
 
 CGI::~CGI()
 { }
 
 CGI::CGI(const CGI& cgi)
-	: _cgiPath(cgi._cgiPath), _cgiSource(cgi._cgiSource)
+	: _cgiPath(cgi._cgiPath), _cgiSource(cgi._cgiSource), _request(cgi._request)
 { }
 
 std::string CGI::processCGI(const Request& request)
@@ -19,8 +19,7 @@ std::string CGI::processCGI(const Request& request)
 		result = executeCGI();
 	}
 	catch (const std::exception& ex) {
-		std::cerr << "CGI exception: " << ex.what() << std::endl;
-		// throw 500 internal error ???
+		std::cerr << "CGI exception: " << ex.what() << std::endl; // 500 internal error in host generated
 	}
 	return (result);
 }
@@ -41,14 +40,14 @@ std::string CGI::executeCGI()
 		throw std::runtime_error("fork fails");
 	}
 	else if (pid > 0) {
-		status = 0;
 		close(fd[0]);
 		// write(fd[0], content, content-length);
 		close(fd[1]);
 		waitpid(pid, &status, 0);
 		if (WIFEXITED(status))
 			status = WEXITSTATUS(status);
-		std::cout << "status: " << status << std::endl;
+		if (status)
+			throw std::runtime_error("CGI fails");
 	}
 	else {
 		close(fd[1]);
@@ -80,43 +79,57 @@ char** CGI::formArgs() const
 char** CGI::formEnvs() const
 {
 	std::map<std::string, std::string> strEnvs;
-	/*
-	if request->headers.count("Authorization") == 1 {
-	 	std::vector<std::string> authVec = split(request->headers["Authorization"];
-	 	if (authVec.size() == 2) {
-	 		strEnvs["AUTH_TYPE"] = authVec[0];
-	 		if (strEnvs["AUTH_TYPE"] == "Basic") {
-				strEnvs["REMOTE_USER"] = encode this shit
-				strEnvs["REMOTE_IDENT"] = encode this shit
-			}
-			else {
-				strEnvs["REMOTE_USER"] = "";
-				strEnvs["REMOTE_IDENT"] = "";
-			}
+
+	if (this->_request.getHeaders().count("authorization")) {
+		std::vector<std::string> authVec = split(this->_request.getHeaders()
+			.at("authorization"), " ");
+		strEnvs["AUTH_TYPE"] = authVec[0];
+		if (authVec[0] == "Basic") {
+			std::vector<std::string> splitBase64 = split(decode(authVec[1]), ":");
+			strEnvs["REMOTE_USER"] = splitBase64[0];
+			strEnvs["REMOTE_IDENT"] = splitBase64[1];
+		}
+		else {
+			strEnvs["REMOTE_USER"] = "";
+			strEnvs["REMOTE_IDENT"] = "";
 		}
 	}
-	*/
-	// example : http://lemp.test/test.php/foo/bar.php?v=1
 
-	strEnvs["SERVER_SOFTWARE"] = "webserv";						// constant
-	strEnvs["GATEWAY_INTERFACE"] = "CGI/1.1";					// constant
-	strEnvs["SERVER_PROTOCOL"] = "HTTP/1.1";					// constant
-	strEnvs["SERVER_NAME"] = "localhost";								// store in Config object
-	strEnvs["SERVER_PORT"] = "8081";							// store in Config object
-	strEnvs["REQUEST_METHOD"] = "POST";							// store in Request object
-	strEnvs["REQUEST_URI"] = "html/test.php";		// store in Request object, but need to remove chars after ? (if its presented)
-	strEnvs["QUERY_STRING"] = "";							// store in Request object but need to remove chars before ? (if its presented)
-	strEnvs["CONTENT_TYPE"] = "text/html";						// store in Request object
-	strEnvs["CONTENT_LENGTH"] = "0";							// store in Request object
-	strEnvs["REMOTE_ADDR"] = "0.0.0.0";						// store in Config object
+	//
+	strEnvs["REMOTE_ADDR"] = "127.0.0.1"; // client ip
 
-	strEnvs["PATH_INFO"] = "/"; // for tester
-	// strEnvs["PATH_INFO"] = "/foo/bar.php"; // path after cgi script, request line before ? (if ? not exist - fulll line)
-//	strEnvs["PATH_TRANSLATED"] = ""; // for tester
-	// strEnvs["PATH_TRANSLATED"] = "/home/foo/bar.php"; // absolute path to server + PATH_INFO
-	// strEnvs["SCRIPT_NAME"] = "test.php"; // file without full path
+	strEnvs["CONTENT_LENGTH"] = this->_request.getContent().length() != 0 ?
+		std::to_string(this->_request.getContent().length()) : "";
+	strEnvs["CONTENT_TYPE"] = this->_request.getHeaders().count("content-type") ?
+		this->_request.getHeaders().at("content-type") : "";
+	strEnvs["GATEWAY_INTERFACE"] = "CGI/1.1";
+	strEnvs["SERVER_PROTOCOL"] = "HTTP/1.1";
+	strEnvs["SERVER_SOFTWARE"] = "webserv/1.0";
 
-	/*
+	//
+	strEnvs["SERVER_NAME"] = "localhost"; // set in config
+	strEnvs["SERVER_PORT"] = "8081"; // set in config
+
+	strEnvs["REQUEST_METHOD"] = this->_request.getMethod();
+
+
+
+	// PATH_INFO
+	//PATH_TRANSLATED
+	//QUERY_STRING
+	//REQUEST_URI
+	//SCRIPT_NAME
+
+
+
+
+
+
+//	getcwd(pwd, 1024);
+//	strEnvs["PATH_INFO"] = std::string()
+
+
+/*
 	// add headers (this headers started with HTTP_, and - replaced by _)
 	 for (iterator it = request->headers.begin(); it != request->headers.end(); it++) {
 	 	std::string header = it->first;
@@ -135,7 +148,7 @@ char** CGI::formEnvs() const
 	 	strEnvs[key] = value;
 	 	i++;
 	 }
-	*/
+*/
 
 	char** envs = new char* [strEnvs.size() + 1];
 	size_t i = 0;
@@ -144,6 +157,42 @@ char** CGI::formEnvs() const
 	envs[i] = NULL;
 
 	return (envs);
+}
+
+std::string CGI::decode(const std::string& input) const
+{
+	char base64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	std::string result;
+	std::vector<int> base(256,-1);
+	for (int i = 0; i < 64; i++)
+		base[base64[i]] = i;
+
+	int val = 0, valb = -8;
+	for (size_t i = 0; i < input.size(); i++) {
+		if (base[input[i]] == -1)
+			break;
+		val = (val << 6) + base[input[i]];
+		valb += 6;
+		if (valb >= 0) {
+			result.push_back(char((val >> valb) & 0xFF));
+			valb -= 8;
+		}
+	}
+	return result;
+}
+
+std::vector<std::string> CGI::splitUri(const std::string& uri) const
+{
+	std::vector<std::string> uriElems;
+	if (uri.find_first_of('?') != std::string::npos) {
+		uriElems.push_back(uri.substr(0, uri.find_first_of('?')));
+		uriElems.push_back(uri.substr(uri.find_first_of('?') + 1));
+	}
+	else {
+		uriElems.push_back(uri);
+		uriElems.push_back("");
+	}
+	return (uriElems);
 }
 
 const std::string& CGI::getPath() const
