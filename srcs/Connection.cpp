@@ -26,8 +26,8 @@ struct sockaddr_in Connection::getSockAddr() const {
 }
 
 void Connection::readData() {
-    char buf[4096];
-    int r = read(sock, buf, 4096);
+    char buf[IOSIZE];
+    int r = read(sock, buf, IOSIZE);
     if (r > 0) {
         rdata.append(buf, r);
         while (!rdata.empty()) {
@@ -63,7 +63,7 @@ void Connection::writeData() {
         responses.pop();
     }
     if (!wdata.empty()) {
-        wdata.erase(0, write(sock, wdata.data(), wdata.length() > 4096 ? 4096 : wdata.length()));
+        wdata.erase(0, write(sock, wdata.data(), wdata.length() > IOSIZE ? IOSIZE : wdata.length()));
     }
 }
 
