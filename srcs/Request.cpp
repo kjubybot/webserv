@@ -124,7 +124,11 @@ bool Request::isFlagError() const {
 // Private methods
 
 void Request::parseSecond(std::string &line) {
-    while (!line.empty() || toRead == 0) {
+    if (headers.find("transfer-encoding") == headers.end() && contentLen == 0) {
+        secondPart = true;
+        return;
+    }
+    while (!line.empty()) {
         if (toRead == 0) {
             if (headers.find("transfer-encoding") == headers.end())
                 toRead = contentLen;
@@ -132,9 +136,11 @@ void Request::parseSecond(std::string &line) {
                 size_t crlf = line.find("\r\n");
                 if (crlf != std::string::npos) {
                     toRead = std::stoul(line, 0, 16);
-                    line.erase(0, crlf + 2);
-                    if (line.find("\r\n") == std::string::npos)
+                    if (toRead == 0 && line.find("\r\n\r\n") == std::string::npos)
                         return;
+                    line.erase(0, crlf + 2);
+//                    if (line.find("\r\n") == std::string::npos)
+//                        return;
                 } else
                     return;
             }
@@ -150,6 +156,8 @@ void Request::parseSecond(std::string &line) {
             toRead -= line.length();
             line.clear();
         } else {
+            if (headers.find("transfer-encoding") != headers.end() && line.find("\r\n") == std::string::npos)
+                return;
             content += line.substr(0, toRead);
             line.erase(0, toRead);
             toRead = 0;

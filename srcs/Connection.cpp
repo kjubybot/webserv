@@ -36,9 +36,9 @@ void Connection::readData() {
             if (!requests.back().isFirstPart() && rdata.find("\r\n\r\n") == std::string::npos)
                 return;
             requests.back().parse(rdata);
-            checkHeaders(requests.back());
             if (!requests.back().isSecondPart())
                 return;
+            checkHeaders(requests.back());
             if (requests.back().isFlagError()) {
                 _isOpen = false;
                 return;

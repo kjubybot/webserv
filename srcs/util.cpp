@@ -69,12 +69,12 @@ std::string iptoa(uint32_t addr) {
 std::string getFileContent(const std::string& filename)
 {
 	int fd = open(filename.c_str(), O_RDONLY);
+	int r;
 	std::string result;
-	std::string tmp;
-	while (get_next_line(fd, tmp))
-		result += tmp + "\n";
-	if (tmp != "")
-		result += tmp;
+	char buf[BUFF_SIZE];
+	while ((r = read(fd, buf, BUFF_SIZE)))
+		result.append(buf, r);
+	close(fd);
 	return (result);
 }
 

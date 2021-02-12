@@ -1,6 +1,7 @@
 #ifndef WEBSERV_RESPONSE_HPP
 #define WEBSERV_RESPONSE_HPP
 
+#include <algorithm>
 #include <fcntl.h>
 #include <map>
 #include <string>

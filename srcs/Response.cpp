@@ -4,7 +4,7 @@ Response::Response() {}
 
 #include <iostream>
 Response::Response(const std::string& code) : code(code) {
-//    std::cout << "Creating response with code " << code << std::endl;
+    std::cout << "Creating response with code " << code << std::endl;
     if (code[0] == '4' || code[0] == '5')
         headers["Connection"] = "close";
 }
@@ -48,7 +48,7 @@ std::string Response::getLastModified(const std::string& filename) {
         dateTm = gmtime(&tv.tv_sec);
     } else {
         stat(filename.c_str(), &fStat);
-        dateTm = gmtime(&fStat.st_mtimespec.tv_sec);
+        dateTm = gmtime(&fStat.st_mtim.tv_sec); // mac fStat.st_mtimespec
     }
     strftime(buf, 100, "%a, %d %b %G %T GMT", dateTm);
     return std::string(buf);
