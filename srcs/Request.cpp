@@ -2,7 +2,8 @@
 
 // Public methods
 
-Request::Request() : firstPart(false), secondPart(false), flagError(false), contentLen(0), maxBodySize(0) {}
+Request::Request(struct sockaddr_in sockAddr)
+        : firstPart(false), secondPart(false), flagError(false), contentLen(0), maxBodySize(0), sockAddr(sockAddr) {}
 
 Request::~Request() {
     headers.clear();
@@ -37,7 +38,11 @@ const std::map<std::string, std::string> &Request::getHeaders() const {
 }
 
 uint64_t Request::getContentLen() const {
-    return contentLen;
+    return content.length();
+}
+
+const sockaddr_in& Request::getSockAddr() const {
+    return sockAddr;
 }
 
 void Request::parse(std::string& line) {
@@ -121,94 +126,49 @@ bool Request::isFlagError() const {
 void Request::parseSecond(std::string &line) {
     static size_t toRead;
 
-    if (toRead == 0) {
-        if (headers.find("transfer-encoding") == headers.end())
-            toRead = contentLen;
-        else {
-            size_t crlf = line.find("\r\n");
-            if (crlf != std::string::npos) {
-                toRead = std::stoi(line, 0, 16);
-                line.erase(0, crlf + 2);
-            } else
+    while (!line.empty() || toRead == 0) {
+        if (toRead == 0) {
+            if (headers.find("transfer-encoding") == headers.end())
+                toRead = contentLen;
+            else {
+                size_t crlf = line.find("\r\n");
+                if (crlf != std::string::npos) {
+                    toRead = std::stoi(line, 0, 16);
+                    line.erase(0, crlf + 2);
+                    if (line.find("\r\n") == std::string::npos)
+                        return;
+                } else
+                    return;
+            }
+        }
+        if (toRead == 0) {
+            if (headers.find("transfer-encoding") != headers.end())
+                line.erase(0, 2);
+            secondPart = true;
+            return;
+        }
+        if (toRead > line.length()) {
+            content += line;
+            toRead -= line.length();
+            line.clear();
+        } else {
+            content += line.substr(0, toRead);
+            line.erase(0, toRead);
+            toRead = 0;
+            if (headers.find("transfer-encoding") == headers.end()) {
+                secondPart = true;
                 return;
+            } else
+                line.erase(0, 2); // erasing \r\n after chunk
         }
     }
-    if (toRead == 0) {
-        secondPart = true;
-        return;
-    }
-    if (toRead > line.length()) {
-        content += line;
-        toRead -= line.length();
-        line.clear();
-    } else {
-        content += line.substr(0, toRead);
-        line.erase(0, toRead);
-        toRead = 0;
-        if (headers.find("transfer-encoding") == headers.end())
-            secondPart = true;
-    }
-    std::cout << "FINISHED PARSING REQUEST" << std::endl;
-    std::cout << "Method: " << method << "; path: " << path << std::endl;
-    std::cout << "Headers: " << std::endl;
-    for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
-        std::cout << it->first << ": " << it->second << std::endl << std::endl;
-    std::cout << content << std::endl;
+//    std::cout << "FINISHED PARSING REQUEST" << std::endl;
+//    std::cout << "Method: " << method << "; path: " << path << std::endl;
+//    std::cout << "Headers: " << std::endl;
+//    for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
+//        std::cout << it->first << ": " << it->second << std::endl << std::endl;
+//    std::cout << content << std::endl;
 }
-//	// if (GET)
-//		// return;
-//
-//	// if : Content-Len && POST - need limit size read
-//	if (contentLen > 0 && headers.count("transfer-encoding") == 0) {
-//		content += line;
-//		content.erase(contentLen + 1);
-//		line.erase(0, contentLen);
-//		finishBody = true;
-//		return;
-//	}
-//
-//
-//	// if : Transfer-Encoding and == chunked, read len symbols
-//	if (headers.count("transfer-encoding") == 1) {
-//		if (headers["transfer-encoding"] == "chunked") {
-//			if (transferLen == 0 && remainder == 0) {
-//				transferLen = std::stoi(line, 0, 16);
-//				if (transferLen == 0) {
-//					finishBody = true;
-//					return ;
-//				}
-//			}
-//			else {
-//				if (remainder > 0) {
-//					if (line.length() > remainder) {
-//						line.erase(remainder + 1);
-////						content += line.substr(0, remainder);
-//						remainder = 0;
-//					}
-//					else {
-//						remainder -= line.length();
-//					}
-//					content += line;
-//				}
-//				else {
-//					if (line.length() < transferLen) {
-//						remainder = transferLen - line.length();
-//					}
-//					else { // line.length() > transferLen
-//						line.erase(transferLen);
-//					}
-//					content += line;
-//					transferLen = 0;
-//				}
-//			}
-//		}
-//		else {
-//			addError("501", "Not Implemented");
-//			throw HttpErrorException("501", "Not Implemented", *this);
-//		}
-//	} else
-//	    finishBody = true;
-//}
 
 void Request::addError(std::string errorKey, std::string errorValue) {
 	firstPart = secondPart = flagError = true;

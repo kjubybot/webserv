@@ -25,9 +25,14 @@ std::string trim(const std::string& s) {
         ++pos;
     if (pos == s.length())
         return std::string();
-    len = 0;
-    while (len + pos < s.length() && !isspace(s[len + pos]))
+    len = s.length() - 1;
+    while (len > pos && isspace(s[len]))
+        --len;
+    if (len == pos && isspace(s[pos]))
+        return std::string();
+    else
         ++len;
+    len -= pos;
     return s.substr(pos, len);
 }
 

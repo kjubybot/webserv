@@ -36,7 +36,7 @@ public :
 	~CGI();
 	CGI(const CGI& cgi);
 
-	std::string processCGI(const Request& request);
+	std::string processCGI();
 	const std::string& getPath() const;
 	const std::string& getSource() const;
 };

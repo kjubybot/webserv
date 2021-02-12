@@ -11,7 +11,7 @@ CGI::CGI(const CGI& cgi)
 	: _cgiPath(cgi._cgiPath), _cgiSource(cgi._cgiSource), _request(cgi._request)
 { }
 
-std::string CGI::processCGI(const Request& request)
+std::string CGI::processCGI()
 {
 	std::string result;
 
@@ -96,7 +96,7 @@ char** CGI::formEnvs() const
 	}
 
 	//
-	strEnvs["REMOTE_ADDR"] = "127.0.0.1"; // client ip
+	strEnvs["REMOTE_ADDR"] = iptoa(this->_request.getSockAddr().sin_addr.s_addr); // client ip
 
 	strEnvs["CONTENT_LENGTH"] = this->_request.getContent().length() != 0 ?
 		std::to_string(this->_request.getContent().length()) : "";
@@ -126,7 +126,7 @@ char** CGI::formEnvs() const
 
 
 //	getcwd(pwd, 1024);
-//	strEnvs["PATH_INFO"] = std::string()
+    strEnvs["PATH_INFO"] = this->_request.getPath();
 
 
 /*
