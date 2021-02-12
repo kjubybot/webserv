@@ -174,7 +174,7 @@ std::string CGI::decode(const std::string& input) const
 		val = (val << 6) + base[input[i]];
 		valb += 6;
 		if (valb >= 0) {
-			result.push_back(char((val >> valb) & 0xFF));
+			result.push_back(char((val >> valb) & 0xff));
 			valb -= 8;
 		}
 	}
