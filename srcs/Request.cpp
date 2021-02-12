@@ -3,7 +3,7 @@
 // Public methods
 
 Request::Request(struct sockaddr_in sockAddr)
-        : firstPart(false), secondPart(false), flagError(false), contentLen(0), maxBodySize(0), sockAddr(sockAddr) {}
+        : firstPart(false), secondPart(false), flagError(false), contentLen(0), maxBodySize(0), sockAddr(sockAddr), toRead(0) {}
 
 Request::~Request() {
     headers.clear();
@@ -124,8 +124,6 @@ bool Request::isFlagError() const {
 // Private methods
 
 void Request::parseSecond(std::string &line) {
-    static size_t toRead;
-
     while (!line.empty() || toRead == 0) {
         if (toRead == 0) {
             if (headers.find("transfer-encoding") == headers.end())
@@ -133,7 +131,7 @@ void Request::parseSecond(std::string &line) {
             else {
                 size_t crlf = line.find("\r\n");
                 if (crlf != std::string::npos) {
-                    toRead = std::stoi(line, 0, 16);
+                    toRead = std::stoul(line, 0, 16);
                     line.erase(0, crlf + 2);
                     if (line.find("\r\n") == std::string::npos)
                         return;

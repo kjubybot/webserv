@@ -2,7 +2,7 @@
 
 Connection::Connection(int sock, struct sockaddr_in sockAddr, std::list<Host> hosts)
         : sock(sock), sockAddr(sockAddr), _isOpen(true), hosts(hosts) {
-    std::cout << "Connection from " << iptoa(sockAddr.sin_addr.s_addr) << std::endl;
+//    std::cout << "Connection from " << iptoa(sockAddr.sin_addr.s_addr) << std::endl;
 }
 
 Connection::~Connection() {

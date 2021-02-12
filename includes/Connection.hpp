@@ -17,7 +17,7 @@
 #include "Response.hpp"
 #include "util.hpp"
 
-#define IOSIZE (1 << 19)
+#define IOSIZE (1 << 15)
 
 class Connection {
     int sock;

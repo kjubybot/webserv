@@ -4,7 +4,7 @@ Response::Response() {}
 
 #include <iostream>
 Response::Response(const std::string& code) : code(code) {
-    std::cout << "Creating response with code " << code << std::endl;
+//    std::cout << "Creating response with code " << code << std::endl;
     if (code[0] == '4' || code[0] == '5')
         headers["Connection"] = "close";
 }

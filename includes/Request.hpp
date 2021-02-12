@@ -17,6 +17,7 @@ class Request {
 	uint64_t contentLen;
 	int maxBodySize;
 	struct sockaddr_in sockAddr;
+	size_t toRead;
 
 	std::string path;
 	std::string method;
