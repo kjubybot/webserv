@@ -3,7 +3,7 @@
 // Public methods
 
 Request::Request(struct sockaddr_in sockAddr)
-        : firstPart(false), secondPart(false), flagError(false), contentLen(0), maxBodySize(0), sockAddr(sockAddr), toRead(0) {}
+        : firstPart(false), secondPart(false), flagError(false), contentLen(0), sockAddr(sockAddr), toRead(0) {}
 
 Request::~Request() {
     headers.clear();
@@ -135,7 +135,7 @@ void Request::parseSecond(std::string &line) {
             else {
                 size_t crlf = line.find("\r\n");
                 if (crlf != std::string::npos) {
-                    toRead = std::stoul(line, 0, 16);
+                    toRead = ::stoul(line, 16);
                     if (toRead == 0 && line.find("\r\n\r\n") == std::string::npos)
                         return;
                     line.erase(0, crlf + 2);
@@ -168,12 +168,6 @@ void Request::parseSecond(std::string &line) {
                 line.erase(0, 2); // erasing \r\n after chunk
         }
     }
-//    std::cout << "FINISHED PARSING REQUEST" << std::endl;
-//    std::cout << "Method: " << method << "; path: " << path << std::endl;
-//    std::cout << "Headers: " << std::endl;
-//    for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
-//        std::cout << it->first << ": " << it->second << std::endl << std::endl;
-//    std::cout << content << std::endl;
 }
 
 void Request::addError(std::string errorKey, std::string errorValue) {

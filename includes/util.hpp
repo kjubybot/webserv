@@ -20,6 +20,9 @@ void freeMatrix(char** matrix);
 std::string skipWS(const std::string &str);
 uint64_t pow(int num, size_t pow);
 std::string joinPath(const std::string& a, const std::string& b);
+unsigned long stoul(const std::string& str, int base = 10);
+std::string to_string(int val);
+std::string to_string(unsigned val);
 
 template <class T>
 bool isIn(std::vector<T>& vec, T val) {

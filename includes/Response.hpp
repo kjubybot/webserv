@@ -34,6 +34,7 @@ public:
     static Response fromString(const std::string& code, const std::string& message, const std::string& body);
     static Response fromStringNoBody(const std::string& code, const std::string& message, const std::string& body);
     static Response fromCGI(const std::string& cgiResponse);
+//    static Response fromCGIFD(int fd);
 
     std::string getData();
     void setCode(const std::string& code);

@@ -15,7 +15,6 @@ class Request {
 	bool secondPart;
 	bool flagError;
 	uint64_t contentLen;
-	int maxBodySize;
 	struct sockaddr_in sockAddr;
 	size_t toRead;
 
