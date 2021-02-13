@@ -24,7 +24,6 @@ class Request {
 	std::string content;
 
 	std::map<std::string, std::string> headers;
-	std::map<std::string, std::string>::iterator it_te;
 	std::pair<std::string, std::string> error;
 
     void parseFirst(std::string &line);

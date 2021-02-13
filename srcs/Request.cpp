@@ -111,7 +111,6 @@ void Request::parseFirst(std::string &line) {
         contentLen = 0;
     }
     firstPart = true;
-	it_te = headers.find("transfer-encoding");
 }
 
 int Request::checkSymbols(char sym) {
@@ -125,13 +124,13 @@ bool Request::isFlagError() const {
 // Private methods
 
 void Request::parseSecond(std::string &line) {
-    if (it_te == headers.end() && contentLen == 0) {
+    if (headers.find("transfer-encoding") == headers.end() && contentLen == 0) {
         secondPart = true;
         return;
     }
     while (!line.empty()) {
         if (toRead == 0) {
-            if (it_te == headers.end())
+            if (headers.find("transfer-encoding") == headers.end())
                 toRead = contentLen;
             else {
                 size_t crlf = line.find("\r\n");
@@ -147,7 +146,7 @@ void Request::parseSecond(std::string &line) {
             }
         }
         if (toRead == 0) {
-            if (it_te != headers.end())
+            if (headers.find("transfer-encoding") != headers.end())
                 line.erase(0, 2);
             secondPart = true;
             return;
@@ -157,12 +156,12 @@ void Request::parseSecond(std::string &line) {
             toRead -= line.length();
             line.clear();
         } else {
-            if (it_te != headers.end() && line.find("\r\n") == std::string::npos)
+            if (headers.find("transfer-encoding") != headers.end() && line.find("\r\n") == std::string::npos)
                 return;
             content += line.substr(0, toRead);
             line.erase(0, toRead);
             toRead = 0;
-            if (it_te == headers.end()) {
+            if (headers.find("transfer-encoding") == headers.end()) {
                 secondPart = true;
                 return;
             } else
