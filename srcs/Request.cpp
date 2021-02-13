@@ -3,7 +3,7 @@
 // Public methods
 
 Request::Request(struct sockaddr_in sockAddr)
-        : firstPart(false), secondPart(false), flagError(false), contentLen(0), maxBodySize(0), sockAddr(sockAddr), toRead(0) {}
+        : firstPart(false), secondPart(false), flagError(false), contentLen(0), sockAddr(sockAddr), toRead(0) {}
 
 Request::~Request() {
     headers.clear();
@@ -102,7 +102,7 @@ void Request::parseFirst(std::string &line) {
                 }
                 contentLen = std::stoi(headerValue);
             }
-            headers[headerName] = headerValue; // check double header name
+            headers[headerName] = headerValue;
         }
         line.erase(0, crlf + 2);
     }
@@ -124,18 +124,19 @@ bool Request::isFlagError() const {
 // Private methods
 
 void Request::parseSecond(std::string &line) {
-    if (headers.find("transfer-encoding") == headers.end() && contentLen == 0) {
+	it_te = headers.find("transfer-encoding");
+    if (it_te == headers.end() && contentLen == 0) {
         secondPart = true;
         return;
     }
     while (!line.empty()) {
         if (toRead == 0) {
-            if (headers.find("transfer-encoding") == headers.end())
+            if (it_te == headers.end())
                 toRead = contentLen;
             else {
                 size_t crlf = line.find("\r\n");
                 if (crlf != std::string::npos) {
-                    toRead = std::stoul(line, 0, 16);
+                    toRead = ::stoul(line, 16);
                     if (toRead == 0 && line.find("\r\n\r\n") == std::string::npos)
                         return;
                     line.erase(0, crlf + 2);
@@ -146,7 +147,7 @@ void Request::parseSecond(std::string &line) {
             }
         }
         if (toRead == 0) {
-            if (headers.find("transfer-encoding") != headers.end())
+            if (it_te != headers.end())
                 line.erase(0, 2);
             secondPart = true;
             return;
@@ -156,24 +157,18 @@ void Request::parseSecond(std::string &line) {
             toRead -= line.length();
             line.clear();
         } else {
-            if (headers.find("transfer-encoding") != headers.end() && line.find("\r\n") == std::string::npos)
+            if (it_te != headers.end() && line.find("\r\n") == std::string::npos)
                 return;
             content += line.substr(0, toRead);
             line.erase(0, toRead);
             toRead = 0;
-            if (headers.find("transfer-encoding") == headers.end()) {
+            if (it_te == headers.end()) {
                 secondPart = true;
                 return;
             } else
                 line.erase(0, 2); // erasing \r\n after chunk
         }
     }
-//    std::cout << "FINISHED PARSING REQUEST" << std::endl;
-//    std::cout << "Method: " << method << "; path: " << path << std::endl;
-//    std::cout << "Headers: " << std::endl;
-//    for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
-//        std::cout << it->first << ": " << it->second << std::endl << std::endl;
-//    std::cout << content << std::endl;
 }
 
 void Request::addError(std::string errorKey, std::string errorValue) {
@@ -188,14 +183,4 @@ bool Request::isFirstPart() const {
 
 bool Request::isSecondPart() const {
     return secondPart;
-}
-
-int Request::getMaxBodySize() const
-{
-	return maxBodySize;
-}
-
-void Request::setMaxBodySize(int maxBodySize)
-{
-	Request::maxBodySize = maxBodySize;
 }

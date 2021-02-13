@@ -138,3 +138,44 @@ std::string joinPath(const std::string& a, const std::string& b) {
         ret = a;
     return ret + b;
 }
+
+unsigned long stoul(const std::string& str, int base) {
+    unsigned long ret = 0;
+    std::string alpha = std::string("0123456789abcdef").substr(0, base);
+    size_t i = 0;
+
+    while (isspace(str[i]))
+        ++i;
+    if (alpha.find(tolower(str[i])) == std::string::npos)
+        throw std::invalid_argument("no conversion");
+    for (; alpha.find(tolower(str[i])) != std::string::npos; ++i)
+        ret = ret * alpha.length() + alpha.find(tolower(str[i]));
+    return ret;
+}
+
+std::string to_string(int val) {
+    std::string ret(64, (char)0);
+    std::string alpha("0123456789");
+    size_t pos = ret.length();
+    bool sign = val < 0;
+
+    while (val) {
+        ret[--pos] = alpha[sign ? -(val % 10) : val % 10];
+        val /= 10;
+    }
+    if (sign)
+        ret[--pos] = '-';
+    return ret.substr(pos);
+}
+
+std::string to_string(unsigned val) {
+    std::string ret(64, (char)0);
+    std::string alpha("0123456789");
+    size_t pos = ret.length();
+
+    while (val) {
+        ret[--pos] = alpha[val % 10];
+        val /= 10;
+    }
+    return ret.substr(pos);
+}
