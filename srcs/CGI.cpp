@@ -81,6 +81,8 @@ char** CGI::formArgs() const
 char** CGI::formEnvs(const Host& host) const
 {
 	std::map<std::string, std::string> strEnvs;
+	char pwd[1024];
+	getcwd(pwd, 1024);
 
 	if (this->_request.getHeaders().count("authorization")) {
 		std::vector<std::string> authVec = split(this->_request.getHeaders()
@@ -96,6 +98,11 @@ char** CGI::formEnvs(const Host& host) const
 			strEnvs["REMOTE_IDENT"] = "";
 		}
 	}
+	else {
+		strEnvs["AUTH_TYPE"] = "";
+		strEnvs["REMOTE_USER"] = "";
+		strEnvs["REMOTE_IDENT"] = "";
+	}
 	strEnvs["REMOTE_ADDR"] = iptoa(this->_request.getSockAddr().sin_addr.s_addr);
 	strEnvs["CONTENT_LENGTH"] = this->_request.getContent().length() != 0 ?
 		std::to_string(this->_request.getContent().length()) : "";
@@ -108,53 +115,23 @@ char** CGI::formEnvs(const Host& host) const
 	strEnvs["SERVER_PORT"] = std::to_string(host.getPort());
 	strEnvs["REQUEST_METHOD"] = this->_request.getMethod();
 
-	char pwd[1024];
-	getcwd(pwd, 1024);
-	std::string requestUri, pathInfo, queryStr, requestPath;
+	std::string requestUri, queryStr;
 	if (this->_request.getPath().find_first_of('?') != std::string::npos) {
-		requestPath = this->_request.getPath().substr(0, this->_request.getPath().find_first_of('?'));
+		requestUri = this->_request.getPath().substr(0, this->_request.getPath().find_first_of('?'));
 		queryStr = this->_request.getPath().substr(this->_request.getPath().find_first_of('?') + 1);
 	}
 	else {
-		requestPath = this->_request.getPath();
+		requestUri = this->_request.getPath();
 		queryStr = "";
 	}
-	std::vector<std::string> splitPath = split(requestPath, "/");
-
-	std::vector<std::string>::iterator it;
-	std::string path(pwd);
-	struct stat stat_buff;
-	for (it = splitPath.begin(); it != splitPath.end(); it++) {
-		path += "/" + *it;
-		requestUri += "/" + *it;
-		stat(path.c_str(), &stat_buff);
-		if (S_ISREG(stat_buff.st_mode) == true) {
-			break ;
-		}
-	}
-
-	/*
-	// rfc logic
-	if (it == splitPath.end()) {
-		throw std::runtime_error("404"); // not found ???
-	}
-	else if (it == --splitPath.end()) {
-		pathInfo = requestUri;
-	}
-	else {
-		for (std::vector<std::string>::iterator jt = it + 1; jt != splitPath.end(); jt++)
-			pathInfo += "/" + *jt;
-	}
-	*/
-
-	// for tester
-	pathInfo = requestUri;
-
 	strEnvs["REQUEST_URI"] = requestUri;
 	strEnvs["QUERY_STRING"] = queryStr;
-	strEnvs["SCRIPT_NAME"] = requestUri.substr(requestUri.find_last_of('/'));
-	strEnvs["PATH_INFO"] = pathInfo;
-	strEnvs["PATH_TRANSLATED"] = pwd + pathInfo;
+	if (requestUri.find_first_of('/') != std::string::npos)
+		strEnvs["SCRIPT_NAME"] = requestUri.substr(requestUri.find_last_of('/'));
+	else
+		strEnvs["SCRIPT_NAME"] = requestUri;
+	strEnvs["PATH_INFO"] = requestUri;
+	strEnvs["PATH_TRANSLATED"] = pwd + requestUri;
 
 	std::map<std::string, std::string> requestHeaders = this->_request.getHeaders();
 	for (std::map<std::string, std::string>::iterator jt = requestHeaders.begin(); jt != requestHeaders.end(); jt++) {

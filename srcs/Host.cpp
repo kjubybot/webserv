@@ -213,11 +213,15 @@ Response Host::processRequest(const Request& r) {
          if (uri.rfind('.') != std::string::npos && uri.substr(uri.rfind('.'), 4) == ".bla") {
              CGI cgi("cgi_tester", fullPath, r);
              std::string resp = cgi.processCGI(*this);
-//             std::cout << resp << std::endl;
              return Response::fromCGI(resp);
          }
-		 return Response::fromStringNoBody("200", "OK", "");
-         //return makeError("403", "Forbidden", realRoot);
+         else if (uri.rfind('.') != std::string::npos) {
+			 CGI cgi(locIt->getCGIPath(), fullPath, r);
+			 std::string resp = cgi.processCGI(*this);
+			 return Response::fromCGI(resp);
+         }
+         else
+		 	return Response::fromStringNoBody("200", "OK", "");
      } else
          return makeError("501", "Not Implemented", realRoot);
 }
