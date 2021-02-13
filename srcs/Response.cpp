@@ -1,26 +1,22 @@
 #include "Response.hpp"
 
-Response::Response() {}
+Response::Response() : complete(false) {}
 
 #include <iostream>
-Response::Response(const std::string& code) : code(code) {
-    std::cout << "Creating response with code " << code << std::endl;
+Response::Response(const std::string& code) : code(code), complete(false) {
+//    std::cout << "Creating response with code " << code << std::endl;
     if (code[0] == '4' || code[0] == '5')
         headers["Connection"] = "close";
 }
-//
-//Response::Response(const std::string& code, const std::string& body) : code(code), body(body) {
-//    if (code[0] == '4' || code[0] == '5')
-//        headers["Connection"] = "close";
-//}
 
-Response::Response(const Response& r) : code(r.code), message(r.message), body(r.body), headers(r.headers) {}
+Response::Response(const Response& r) : code(r.code), message(r.message), body(r.body), headers(r.headers), complete(true) {}
 
 Response& Response::operator=(const Response& r) {
     code = r.code;
     message = r.message;
     body = r.body;
     headers = r.headers;
+    complete = r.complete;
     return *this;
 }
 
@@ -48,7 +44,7 @@ std::string Response::getLastModified(const std::string& filename) {
         dateTm = gmtime(&tv.tv_sec);
     } else {
         stat(filename.c_str(), &fStat);
-        dateTm = gmtime(&fStat.st_mtim.tv_sec); // mac fStat.st_mtimespec
+        dateTm = gmtime(&fStat.st_mtimespec.tv_sec);
     }
     strftime(buf, 100, "%a, %d %b %G %T GMT", dateTm);
     return std::string(buf);
@@ -83,7 +79,12 @@ std::string Response::getData() {
         data.append(it->first + ": " + it->second + "\r\n");
     data.append("\r\n");
     data.append(body);
+    complete = true;
     return data;
+}
+
+bool Response::isComplete() const {
+    return complete;
 }
 
 void Response::setCode(const std::string& code) {
@@ -104,14 +105,9 @@ void Response::setHeader(const std::string& key, const std::string& value) {
 
 Response Response::fromFile(const std::string& code, const std::string& message, const std::string& filename) {
     Response ret(code);
-    char buf[4096];
-    int r;
-    int fd = open(filename.c_str(), O_RDONLY);
 
     ret.message = message;
-    while ((r = read(fd, buf, 4096)))
-        ret.body.append(buf, r);
-    close(fd);
+    ret.body = getFileContent(filename);
     ret.headers["Content-Length"] = std::to_string(ret.body.length());
     ret.headers["Content-Type"] = getContentType(filename);
     ret.headers["Last-Modified"] = getLastModified(filename);

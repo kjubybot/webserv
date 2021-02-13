@@ -84,7 +84,7 @@ bool Server::makeSockets() {
             std::cerr << "Unable to bind socket: " << strerror(errno) << std::endl;
             return false;
         }
-        if (listen(sock, 50)) {
+        if (listen(sock, -1)) {
             std::cerr << "Unable to enter listen mode: " << strerror(errno) << std::endl;
             return false;
         }
@@ -141,6 +141,6 @@ void Server::startServer() {
                     (*it)->writeData();
             }
         }
-        usleep(1000);
+        usleep(10);
     }
 }

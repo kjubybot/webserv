@@ -34,12 +34,10 @@ public:
     Request(struct sockaddr_in sockAddr);
     virtual ~Request();
 
-	void setMaxBodySize(int maxBodySize);
 	void setPath(const std::string &path);
     void setMethod(const std::string &method);
 
     uint64_t getContentLen() const;
-	int getMaxBodySize() const;
 	const std::string &getPath() const;
     const std::string &getMethod() const;
     const std::string &getContent() const;
@@ -57,4 +55,4 @@ public:
     const sockaddr_in& getSockAddr() const;
 };
 
-#endif //REQUEST_HPP
+#endif

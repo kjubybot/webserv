@@ -102,7 +102,7 @@ void Request::parseFirst(std::string &line) {
                 }
                 contentLen = std::stoi(headerValue);
             }
-            headers[headerName] = headerValue; // check double header name
+            headers[headerName] = headerValue;
         }
         line.erase(0, crlf + 2);
     }
@@ -188,14 +188,4 @@ bool Request::isFirstPart() const {
 
 bool Request::isSecondPart() const {
     return secondPart;
-}
-
-int Request::getMaxBodySize() const
-{
-	return maxBodySize;
-}
-
-void Request::setMaxBodySize(int maxBodySize)
-{
-	Request::maxBodySize = maxBodySize;
 }
