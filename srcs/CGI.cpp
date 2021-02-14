@@ -13,18 +13,16 @@ CGI::CGI(const CGI& cgi)
 
 std::string CGI::processCGI(const Host& host)
 {
-	std::string result;
-
 	try {
-		result = executeCGI(host);
+		executeCGI(host);
 	}
 	catch (const std::exception& ex) {
 		std::cerr << "CGI exception: " << ex.what() << std::endl;
 	}
-	return (result);
+	return (getFileContent("./cgi_response"));
 }
 
-std::string CGI::executeCGI(const Host& host)
+void CGI::executeCGI(const Host& host)
 {
 	int		fd[2];
 	pid_t	pid;
@@ -44,29 +42,33 @@ std::string CGI::executeCGI(const Host& host)
 		write(fd[1], this->_request.getContent().c_str(), this->_request.getContent().length());
 		close(fd[1]);
 		waitpid(pid, &status, 0);
-		if (WIFEXITED(status))
+		freeMatrix(args);
+		freeMatrix(envs);
+		if (WIFEXITED(status)) {
 			status = WEXITSTATUS(status);
-		if (status)
+		}
+		if (status) {
 			throw std::runtime_error("script execution failed");
+		}
 	}
 	else {
 		close(fd[1]);
 		int outputFd = open("./cgi_response", O_RDWR | O_CREAT | O_TRUNC,
 			S_IRWXU | S_IRGRP | S_IROTH);
-		if (outputFd < 0)
+		if (outputFd < 0) {
 			throw std::runtime_error("open fails");
-		if (dup2(fd[0], 0) < 0)
+		}
+		if (dup2(fd[0], 0) < 0) {
 			throw std::runtime_error("dup2 fails");
-		if (dup2(outputFd, 1) < 0)
+		}
+		if (dup2(outputFd, 1) < 0) {
 			throw std::runtime_error("dup2 fails");
+		}
 		exec_status = execve(this->_cgiPath.c_str(), args, envs);
 		close(outputFd);
 		close(fd[0]);
 		exit(exec_status);
 	}
-	freeMatrix(args);
-	freeMatrix(envs);
-	return (getFileContent("./cgi_response"));
 }
 
 char** CGI::formArgs() const
@@ -103,7 +105,7 @@ char** CGI::formEnvs(const Host& host) const
 		strEnvs["REMOTE_USER"] = "";
 		strEnvs["REMOTE_IDENT"] = "";
 	}
-	strEnvs["REMOTE_ADDR"] = iptoa(this->_request.getSockAddr().sin_addr.s_addr);
+
 	strEnvs["CONTENT_LENGTH"] = this->_request.getContent().length() != 0 ?
 		std::to_string(this->_request.getContent().length()) : "";
 	strEnvs["CONTENT_TYPE"] = this->_request.getHeaders().count("content-type") ?
@@ -114,6 +116,7 @@ char** CGI::formEnvs(const Host& host) const
 	strEnvs["SERVER_NAME"] = host.getName();
 	strEnvs["SERVER_PORT"] = std::to_string(host.getPort());
 	strEnvs["REQUEST_METHOD"] = this->_request.getMethod();
+	strEnvs["REMOTE_ADDR"] = iptoa(this->_request.getSockAddr().sin_addr.s_addr);
 
 	std::string requestUri, queryStr;
 	if (this->_request.getPath().find_first_of('?') != std::string::npos) {
@@ -131,7 +134,7 @@ char** CGI::formEnvs(const Host& host) const
 	else
 		strEnvs["SCRIPT_NAME"] = requestUri;
 	strEnvs["PATH_INFO"] = requestUri;
-	strEnvs["PATH_TRANSLATED"] = pwd + requestUri;
+	strEnvs["PATH_TRANSLATED"] = pwd + strEnvs["PATH_INFO"];
 
 	std::map<std::string, std::string> requestHeaders = this->_request.getHeaders();
 	for (std::map<std::string, std::string>::iterator jt = requestHeaders.begin(); jt != requestHeaders.end(); jt++) {
@@ -170,7 +173,7 @@ std::string CGI::decodeBase64(const std::string& input) const
 			valb -= 8;
 		}
 	}
-	return result;
+	return (result);
 }
 
 const std::string& CGI::getPath() const
