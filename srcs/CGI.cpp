@@ -34,9 +34,8 @@ void CGI::executeCGI(const Host& host)
 	if (pipe(fd) < 0)
 		throw std::runtime_error("pipe fails");
 	pid = fork();
-	if (pid < 0) {
+	if (pid < 0)
 		throw std::runtime_error("fork fails");
-	}
 	else if (pid > 0) {
 		close(fd[0]);
 		write(fd[1], this->_request.getContent().c_str(), this->_request.getContent().length());
@@ -44,26 +43,21 @@ void CGI::executeCGI(const Host& host)
 		waitpid(pid, &status, 0);
 		freeMatrix(args);
 		freeMatrix(envs);
-		if (WIFEXITED(status)) {
+		if (WIFEXITED(status))
 			status = WEXITSTATUS(status);
-		}
-		if (status) {
+		if (status)
 			throw std::runtime_error("script execution failed");
-		}
 	}
 	else {
 		close(fd[1]);
 		int outputFd = open("./cgi_response", O_RDWR | O_CREAT | O_TRUNC,
 			S_IRWXU | S_IRGRP | S_IROTH);
-		if (outputFd < 0) {
+		if (outputFd < 0)
 			throw std::runtime_error("open fails");
-		}
-		if (dup2(fd[0], 0) < 0) {
+		if (dup2(fd[0], 0) < 0)
 			throw std::runtime_error("dup2 fails");
-		}
-		if (dup2(outputFd, 1) < 0) {
+		if (dup2(outputFd, 1) < 0)
 			throw std::runtime_error("dup2 fails");
-		}
 		exec_status = execve(this->_cgiPath.c_str(), args, envs);
 		close(outputFd);
 		close(fd[0]);
