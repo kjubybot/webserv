@@ -117,7 +117,6 @@ std::list<Config::ConfigServer::ConfigLocation>::iterator Host::matchLocation(co
     }
     while (it != defaultIt) {
         slash = it->_name.rfind('/');
-	    std::cout << "hello there: " << loc << " on " << it->getName() << " : " << (it->_name.compare(0, slash > 0 ? slash : it->_name.length(), loc, 0, slash > 0 ? slash : it->_name.length()) == 0) << std::endl;
         if (it->_name.compare(0, slash > 0 ? slash : it->_name.length(), loc, 0, slash > 0 ? slash : it->_name.length()) == 0)
             return it;
         ++it;
@@ -126,7 +125,6 @@ std::list<Config::ConfigServer::ConfigLocation>::iterator Host::matchLocation(co
 	std::list<conf_loc>::iterator jt = regLocations.begin();
     while (jt != regLocations.end()) {
     	std::regex regex(jt->getName(), std::regex_constants::ECMAScript);
-	    std::cout << "hello there: " << loc << " on " << jt->getName() << " : " << std::regex_match(loc, regex) << std::endl;
 	    if (std::regex_match(loc, regex))
 	    	return (jt);
 	    jt++;
@@ -156,11 +154,15 @@ Response Host::processRequest(const Request& r) {
 	    std::cout << "No matched location" << std::endl;
     } else {
         realRoot = locIt->_root;
-        if (r.getPath().length() > 0)
+	    std::vector<std::string> regLocs;
+	    for (std::list<conf_loc>::iterator itt = regLocations.begin(); itt != regLocations.end(); itt++)
+		    regLocs.push_back(itt->getName());
+        if (r.getPath().length() > 0 && !isIn(regLocs, locIt->getName()))
             uri = r.getPath().substr(locIt->_name.rfind('/'));
+        else if (isIn(regLocs, locIt->getName()))
+	        uri = r.getPath().substr(r.getPath().find('/') + 1);
         else
             uri = r.getPath();
-        std::cout << "Matched location: " << locIt->getName() << std::endl;
     }
     if (r.isFlagError())
         return makeError(r.getError().first, r.getError().second, realRoot);
