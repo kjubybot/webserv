@@ -25,14 +25,13 @@ private :
 	CGI();
 	CGI& operator= (const CGI& cgi);
 
-	std::string executeCGI(const Host& host);
+	void executeCGI(const Host& host);
 	char** formArgs() const;
 	char** formEnvs(const Host& host) const;
 	std::string decodeBase64(const std::string& input) const;
 
 public :
 	explicit CGI(const std::string& path, const std::string& source, const Request& request);
-
 	~CGI();
 	CGI(const CGI& cgi);
 

@@ -13,18 +13,6 @@ int Connection::getSocket() const {
     return sock;
 }
 
-const Request& Connection::getRequest() const {
-    return requests.front();
-}
-
-void Connection::popRequest() {
-    requests.pop();
-}
-
-struct sockaddr_in Connection::getSockAddr() const {
-    return sockAddr;
-}
-
 void Connection::readData() {
     char buf[IOSIZE];
     int r = read(sock, buf, IOSIZE);
@@ -60,7 +48,8 @@ void Connection::readData() {
 void Connection::writeData() {
     if (!responses.empty()) {
         wdata += responses.front().getData();
-        responses.pop();
+        if (responses.front().isComplete())
+            responses.pop();
     }
     if (!wdata.empty()) {
         wdata.erase(0, write(sock, wdata.data(), wdata.length() > IOSIZE ? IOSIZE : wdata.length()));
@@ -69,12 +58,6 @@ void Connection::writeData() {
 
 bool Connection::isOpen() const {
     return _isOpen;
-}
-
-bool Connection::reqReady() const {
-    if (requests.empty())
-        return false;
-    return requests.front().isSecondPart();
 }
 
 bool Connection::resReady() const {

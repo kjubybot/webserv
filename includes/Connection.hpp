@@ -39,13 +39,9 @@ public:
     ~Connection();
 
     int getSocket() const;
-    const Request& getRequest() const;
-    void popRequest();
-    struct sockaddr_in getSockAddr() const;
     void readData();
     void writeData();
     bool isOpen() const;
-    bool reqReady() const;
     bool resReady() const;
     void routeRequests();
 };
