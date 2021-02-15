@@ -37,6 +37,10 @@ const std::map<std::string, std::string> &Request::getHeaders() const {
 	return headers;
 }
 
+const std::string& Request::getHeader(const std::string& headerName) {
+    return headers[headerName];
+}
+
 uint64_t Request::getContentLen() const {
     return content.length();
 }
@@ -67,6 +71,10 @@ bool Request::isFirstPart() const {
 
 bool Request::isSecondPart() const {
 	return secondPart;
+}
+
+bool Request::hasHeader(const std::string& headerName) const {
+    return headers.find(headerName) != headers.end();
 }
 
 // Privates methods
@@ -129,6 +137,9 @@ void Request::parseSecond(std::string &line) {
 
     if (it_te == headers.end() && contentLen == 0) {
         secondPart = true;
+        return;
+    } else if (it_te != headers.end() && headers["transfer-encoding"] != "chunked") {
+        addError("501", "Not Implemented");
         return;
     }
     while (!line.empty()) {

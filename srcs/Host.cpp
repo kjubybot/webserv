@@ -177,9 +177,9 @@ Response Host::processRequest(const Request& r) {
                  return makeError("404", "Not Found", realRoot);
              } else if ((locIt != locations.end() && locIt->getAutoIndex())) {
                  if (r.getMethod() == "GET")
-                     return Response::fromString("200", "OK", makeAutoindex(realRoot));
+                     return Response::fromString("200", "OK", makeAutoindex(fullPath));
                  else
-                     return Response::fromStringNoBody("200", "OK", makeAutoindex(realRoot));
+                     return Response::fromStringNoBody("200", "OK", makeAutoindex(fullPath));
              } else
                  return makeError("403", "Forbidden", realRoot);
          } else {
