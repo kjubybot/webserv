@@ -13,18 +13,16 @@ CGI::CGI(const CGI& cgi)
 
 std::string CGI::processCGI(const Host& host)
 {
-	std::string result;
-
 	try {
-		result = executeCGI(host);
+		executeCGI(host);
 	}
 	catch (const std::exception& ex) {
 		std::cerr << "CGI exception: " << ex.what() << std::endl;
 	}
-	return (result);
+	return (getFileContent("./cgi_response"));
 }
 
-std::string CGI::executeCGI(const Host& host)
+void CGI::executeCGI(const Host& host)
 {
 	int		fd[2];
 	pid_t	pid;
@@ -36,14 +34,15 @@ std::string CGI::executeCGI(const Host& host)
 	if (pipe(fd) < 0)
 		throw std::runtime_error("pipe fails");
 	pid = fork();
-	if (pid < 0) {
+	if (pid < 0)
 		throw std::runtime_error("fork fails");
-	}
 	else if (pid > 0) {
 		close(fd[0]);
 		write(fd[1], this->_request.getContent().c_str(), this->_request.getContent().length());
 		close(fd[1]);
 		waitpid(pid, &status, 0);
+		freeMatrix(args);
+		freeMatrix(envs);
 		if (WIFEXITED(status))
 			status = WEXITSTATUS(status);
 		if (status)
@@ -64,9 +63,6 @@ std::string CGI::executeCGI(const Host& host)
 		close(fd[0]);
 		exit(exec_status);
 	}
-	freeMatrix(args);
-	freeMatrix(envs);
-	return (getFileContent("./cgi_response"));
 }
 
 char** CGI::formArgs() const
@@ -81,6 +77,8 @@ char** CGI::formArgs() const
 char** CGI::formEnvs(const Host& host) const
 {
 	std::map<std::string, std::string> strEnvs;
+	char pwd[1024];
+	getcwd(pwd, 1024);
 
 	if (this->_request.getHeaders().count("authorization")) {
 		std::vector<std::string> authVec = split(this->_request.getHeaders()
@@ -96,7 +94,12 @@ char** CGI::formEnvs(const Host& host) const
 			strEnvs["REMOTE_IDENT"] = "";
 		}
 	}
-	strEnvs["REMOTE_ADDR"] = iptoa(this->_request.getSockAddr().sin_addr.s_addr);
+	else {
+		strEnvs["AUTH_TYPE"] = "";
+		strEnvs["REMOTE_USER"] = "";
+		strEnvs["REMOTE_IDENT"] = "";
+	}
+
 	strEnvs["CONTENT_LENGTH"] = this->_request.getContent().length() != 0 ?
 		std::to_string(this->_request.getContent().length()) : "";
 	strEnvs["CONTENT_TYPE"] = this->_request.getHeaders().count("content-type") ?
@@ -107,54 +110,25 @@ char** CGI::formEnvs(const Host& host) const
 	strEnvs["SERVER_NAME"] = host.getName();
 	strEnvs["SERVER_PORT"] = std::to_string(host.getPort());
 	strEnvs["REQUEST_METHOD"] = this->_request.getMethod();
+	strEnvs["REMOTE_ADDR"] = iptoa(this->_request.getSockAddr().sin_addr.s_addr);
 
-	char pwd[1024];
-	getcwd(pwd, 1024);
-	std::string requestUri, pathInfo, queryStr, requestPath;
+	std::string requestUri, queryStr;
 	if (this->_request.getPath().find_first_of('?') != std::string::npos) {
-		requestPath = this->_request.getPath().substr(0, this->_request.getPath().find_first_of('?'));
+		requestUri = this->_request.getPath().substr(0, this->_request.getPath().find_first_of('?'));
 		queryStr = this->_request.getPath().substr(this->_request.getPath().find_first_of('?') + 1);
 	}
 	else {
-		requestPath = this->_request.getPath();
+		requestUri = this->_request.getPath();
 		queryStr = "";
 	}
-	std::vector<std::string> splitPath = split(requestPath, "/");
-
-	std::vector<std::string>::iterator it;
-	std::string path(pwd);
-	struct stat stat_buff;
-	for (it = splitPath.begin(); it != splitPath.end(); it++) {
-		path += "/" + *it;
-		requestUri += "/" + *it;
-		stat(path.c_str(), &stat_buff);
-		if (S_ISREG(stat_buff.st_mode) == true) {
-			break ;
-		}
-	}
-
-	/*
-	// rfc logic
-	if (it == splitPath.end()) {
-		throw std::runtime_error("404"); // not found ???
-	}
-	else if (it == --splitPath.end()) {
-		pathInfo = requestUri;
-	}
-	else {
-		for (std::vector<std::string>::iterator jt = it + 1; jt != splitPath.end(); jt++)
-			pathInfo += "/" + *jt;
-	}
-	*/
-
-	// for tester
-	pathInfo = requestUri;
-
 	strEnvs["REQUEST_URI"] = requestUri;
 	strEnvs["QUERY_STRING"] = queryStr;
-	strEnvs["SCRIPT_NAME"] = requestUri.substr(requestUri.find_last_of('/'));
-	strEnvs["PATH_INFO"] = pathInfo;
-	strEnvs["PATH_TRANSLATED"] = pwd + pathInfo;
+	if (requestUri.find_first_of('/') != std::string::npos)
+		strEnvs["SCRIPT_NAME"] = requestUri.substr(requestUri.find_last_of('/'));
+	else
+		strEnvs["SCRIPT_NAME"] = requestUri;
+	strEnvs["PATH_INFO"] = requestUri;
+	strEnvs["PATH_TRANSLATED"] = pwd + strEnvs["PATH_INFO"];
 
 	std::map<std::string, std::string> requestHeaders = this->_request.getHeaders();
 	for (std::map<std::string, std::string>::iterator jt = requestHeaders.begin(); jt != requestHeaders.end(); jt++) {
@@ -193,7 +167,7 @@ std::string CGI::decodeBase64(const std::string& input) const
 			valb -= 8;
 		}
 	}
-	return result;
+	return (result);
 }
 
 const std::string& CGI::getPath() const

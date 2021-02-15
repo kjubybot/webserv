@@ -125,12 +125,6 @@ Response Host::processRequest(const Request& r) {
     std::list<conf_loc>::iterator locIt;
     std::vector<std::string> indexes;
 
-
-//    std::cout << "Processing request: " << std::endl;
-//    std::cout << "Method: " << r.getMethod() << std::endl;
-//    std::cout << "URI: " << r.getPath() << std::endl;
-//    std::cout << "Content: \n" << r.getContent() << std::endl;
-
     if ((locIt = matchLocation(r.getPath())) == locations.end()) {
         realRoot = root;
         uri = r.getPath();
@@ -209,15 +203,28 @@ Response Host::processRequest(const Request& r) {
          }
          return ret;
      }
-     else if (r.getMethod() == "POST") {
-         if (uri.rfind('.') != std::string::npos && uri.substr(uri.rfind('.'), 4) == ".bla") {
-             CGI cgi("cgi_tester", fullPath, r);
-             std::string resp = cgi.processCGI(*this);
-//             std::cout << resp << std::endl;
-             return Response::fromCGI(resp);
-         }
+	 else if (r.getMethod() == "POST") {
+		 if (uri.rfind('.') != std::string::npos && uri.substr(uri.rfind('.'), 4) == ".bla") {
+			 CGI cgi("cgi_tester", fullPath, r);
+			 std::string resp = cgi.processCGI(*this);
+			 return Response::fromCGI(resp);
+		 }
 		 return Response::fromStringNoBody("200", "OK", "");
-         //return makeError("403", "Forbidden", realRoot);
-     } else
-         return makeError("501", "Not Implemented", realRoot);
+		 /*
+		if (uri.rfind('.') != std::string::npos) {
+			CGI cgi(locIt->getCGIPath(), fullPath, r);
+			try {
+				std::string resp = cgi.processCGI(*this);
+				return Response::fromCGI(resp);
+			}
+			catch (const std::exception& ex) {
+				std::cerr << ex.what() << std::endl;
+			}
+			return Response::fromStringNoBody("500", "Internal Error", "");
+		}
+		else
+			return Response::fromStringNoBody("200", "OK", "");*/
+	 } else {
+		 return makeError("501", "Not Implemented", realRoot);
+	 }
 }
