@@ -106,15 +106,24 @@ uint16_t Host::getPort() const
 
 std::list<Config::ConfigServer::ConfigLocation>::iterator Host::matchLocation(const std::string& loc) {
     std::list<conf_loc>::iterator it = locations.begin();
+    size_t slash;
 
     if (locations.empty())
         return locations.end();
     while (it != locations.end()) {
-        if (it->_name.compare(0, it->_name.rfind('/'), loc, 0, it->_name.rfind('/')) == 0)
+        slash = it->_name.rfind('/');
+        if (it->_name.compare(0, slash > 0 ? slash : it->_name.length(), loc, 0, slash > 0 ? slash : it->_name.length()) == 0)
             return it;
         ++it;
     }
     return --locations.end();
+}
+
+bool Host::matchExtension(const std::string& ext, conf_loc& loc) {
+    for (std::vector<std::string>::iterator it = loc._cgiExtensions.begin(); it != loc._cgiExtensions.end(); ++it)
+        if (ext == *it)
+            return true;
+    return false;
 }
 
 Response Host::processRequest(const Request& r) {
@@ -204,7 +213,8 @@ Response Host::processRequest(const Request& r) {
          return ret;
      }
 	 else if (r.getMethod() == "POST") {
-		 if (uri.rfind('.') != std::string::npos && uri.substr(uri.rfind('.'), 4) == ".bla") {
+	     size_t dot = uri.rfind('.');
+		 if (dot != std::string::npos && matchExtension(uri.substr(dot), *locIt)) {
 			 CGI cgi("cgi_tester", fullPath, r);
 			 std::string resp = cgi.processCGI(*this);
 			 return Response::fromCGI(resp);
@@ -224,7 +234,6 @@ Response Host::processRequest(const Request& r) {
 		}
 		else
 			return Response::fromStringNoBody("200", "OK", "");*/
-	 } else {
+	 } else
 		 return makeError("501", "Not Implemented", realRoot);
-	 }
 }
