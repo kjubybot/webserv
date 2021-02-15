@@ -203,7 +203,7 @@ Response Host::processRequest(const Request& r) {
              write(fd, r.getContent().data(), r.getContent().length());
              close(fd);
              ret = Response::fromStringNoBody("201", "Created", "");
-             ret.setHeader("Location", "http://" + joinPath(names.front(), joinPath(locIt->_uploadPath, r.getPath())));
+             ret.setHeader("Content-Location", "http://" + joinPath(names.front(), joinPath(locIt->_uploadPath, r.getPath())));
          } else {
              fd = open(fullPath.c_str(), O_WRONLY | O_TRUNC);
              write(fd, r.getContent().data(), r.getContent().length());

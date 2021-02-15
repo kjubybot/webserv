@@ -6,6 +6,7 @@ Response::Response(const std::string& code) : code(code), complete(false) {
 //    std::cout << "Creating response with code " << code << std::endl;
     if (code[0] == '4' || code[0] == '5')
         headers["Connection"] = "close";
+    headers["Content-Language"] = "en";
 }
 
 Response::Response(const Response& r) : code(r.code), message(r.message), body(r.body), headers(r.headers), complete(true) {}
