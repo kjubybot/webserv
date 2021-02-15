@@ -138,7 +138,7 @@ void Request::parseSecond(std::string &line) {
             else {
                 size_t crlf = line.find("\r\n");
                 if (crlf != std::string::npos) {
-                    toRead = ::stoul(line, 16);
+                    toRead = std::stoul(line, 0,16);
                     if (toRead == 0 && line.find("\r\n\r\n") == std::string::npos)
                         return;
                     line.erase(0, crlf + 2);

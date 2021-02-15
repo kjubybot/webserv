@@ -13,10 +13,6 @@ int Connection::getSocket() const {
     return sock;
 }
 
-struct sockaddr_in Connection::getSockAddr() const {
-    return sockAddr;
-}
-
 void Connection::readData() {
     char buf[IOSIZE];
     int r = read(sock, buf, IOSIZE);

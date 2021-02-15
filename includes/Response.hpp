@@ -37,9 +37,6 @@ public:
     static Response fromCGIFD(int fd);
 
     std::string getData();
-    void setCode(const std::string& code);
-    void setMessage(const std::string& message);
-    void setBody(const std::string& body);
     void setHeader(const std::string& key, const std::string& value);
 
     bool isComplete() const;

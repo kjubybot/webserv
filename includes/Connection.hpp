@@ -39,7 +39,6 @@ public:
     ~Connection();
 
     int getSocket() const;
-    struct sockaddr_in getSockAddr() const;
     void readData();
     void writeData();
     bool isOpen() const;

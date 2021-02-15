@@ -87,18 +87,6 @@ bool Response::isComplete() const {
     return complete;
 }
 
-void Response::setCode(const std::string& code) {
-    this->code = code;
-}
-
-void Response::setMessage(const std::string& message) {
-    this->message = message;
-}
-
-void Response::setBody(const std::string& body) {
-    this->body = body;
-}
-
 void Response::setHeader(const std::string& key, const std::string& value) {
     headers[key] = value;
 }

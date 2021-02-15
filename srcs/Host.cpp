@@ -84,9 +84,6 @@ std::string Host::getName() const {
     return names.front();
 }
 
-const std::map<std::string, std::string>& Host::getErrorPages() const
-{ return (errorPages); }
-
 uint64_t Host::getMaxBodySize(const Request& request) {
     std::list<conf_loc>::iterator it = matchLocation(request.getPath());
     if (it != locations.end())
