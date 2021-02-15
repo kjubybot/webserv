@@ -119,7 +119,12 @@ void Request::parseFirst(std::string &line) {
 					addError("400", "Bad Request");
 					return;
 				}
-				contentLen = std::stoi(headerValue);
+				try {
+                    contentLen = std::stoi(headerValue);
+                } catch (...) {
+				    addError("400", "Bad Request");
+                    return;
+				}
 			}
 			headers[headerName] = headerValue;
 		}
@@ -149,7 +154,12 @@ void Request::parseSecond(std::string &line) {
             else {
                 size_t crlf = line.find("\r\n");
                 if (crlf != std::string::npos) {
-                    toRead = std::stoul(line, 0,16);
+                    try {
+                        toRead = std::stoul(line, 0, 16);
+                    } catch (...) {
+                        addError("400", "Bad Request");
+                        return;
+                    }
                     if (toRead == 0 && line.find("\r\n\r\n") == std::string::npos)
                         return;
                     line.erase(0, crlf + 2);
