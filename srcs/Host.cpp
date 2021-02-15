@@ -16,13 +16,15 @@ Host::Host(const Config::ConfigServer& server)
 	port = server.getPort();
 	locations = server.getLocations();
 	locations.sort(Host::forSortingByLength);
+	regLocations = server.getRegexLocations();
 }
 
 Host::~Host()
 { }
 
 Host::Host(const Host& h)
-    : sockAddr(h.sockAddr), names(h.names), errorPages(h.errorPages), maxBodySize(h.maxBodySize), root(h.root), index(h.index), port(h.port), locations(h.locations)
+    :   sockAddr(h.sockAddr), names(h.names), errorPages(h.errorPages), maxBodySize(h.maxBodySize), root(h.root),
+        index(h.index),port(h.port), locations(h.locations), regLocations(h.regLocations)
 { }
 
 Host& Host::operator=(const Host& h) {
@@ -34,6 +36,7 @@ Host& Host::operator=(const Host& h) {
 	index = h.index;
 	port = h.port;
 	locations = h.locations;
+	regLocations = h.regLocations;
 	return (*this);
 }
 
@@ -107,16 +110,29 @@ uint16_t Host::getPort() const
 std::list<Config::ConfigServer::ConfigLocation>::iterator Host::matchLocation(const std::string& loc) {
     std::list<conf_loc>::iterator it = locations.begin();
     size_t slash;
+	std::list<conf_loc>::iterator defaultIt = (locations.back().getName() == "/") ? --locations.end() : locations.end();
 
-    if (locations.empty())
-        return locations.end();
-    while (it != locations.end()) {
+	if (locations.empty()) {
+	    return locations.end();
+    }
+    while (it != defaultIt) {
         slash = it->_name.rfind('/');
+	    std::cout << "hello there: " << loc << " on " << it->getName() << " : " << (it->_name.compare(0, slash > 0 ? slash : it->_name.length(), loc, 0, slash > 0 ? slash : it->_name.length()) == 0) << std::endl;
         if (it->_name.compare(0, slash > 0 ? slash : it->_name.length(), loc, 0, slash > 0 ? slash : it->_name.length()) == 0)
             return it;
         ++it;
     }
-    return --locations.end();
+
+	std::list<conf_loc>::iterator jt = regLocations.begin();
+    while (jt != regLocations.end()) {
+    	std::regex regex(jt->getName(), std::regex_constants::ECMAScript);
+	    std::cout << "hello there: " << loc << " on " << jt->getName() << " : " << std::regex_match(loc, regex) << std::endl;
+	    if (std::regex_match(loc, regex))
+	    	return (jt);
+	    jt++;
+    }
+
+	return (--locations.end());
 }
 
 bool Host::matchExtension(const std::string& ext, conf_loc& loc) {
@@ -137,12 +153,14 @@ Response Host::processRequest(const Request& r) {
     if ((locIt = matchLocation(r.getPath())) == locations.end()) {
         realRoot = root;
         uri = r.getPath();
+	    std::cout << "No matched location" << std::endl;
     } else {
         realRoot = locIt->_root;
         if (r.getPath().length() > 0)
             uri = r.getPath().substr(locIt->_name.rfind('/'));
         else
             uri = r.getPath();
+        std::cout << "Matched location: " << locIt->getName() << std::endl;
     }
     if (r.isFlagError())
         return makeError(r.getError().first, r.getError().second, realRoot);
