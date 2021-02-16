@@ -13,13 +13,16 @@ CGI::CGI(const CGI& cgi)
 
 std::string CGI::processCGI(const Host& host)
 {
+	std::string result;
 	try {
 		executeCGI(host);
+		result = getFileContent("./cgi_response");
 	}
 	catch (const std::exception& ex) {
 		std::cerr << "CGI exception: " << ex.what() << std::endl;
+		throw std::runtime_error("cgi fails");
 	}
-	return (getFileContent("./cgi_response"));
+	return (result);
 }
 
 void CGI::executeCGI(const Host& host)
