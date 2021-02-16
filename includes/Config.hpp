@@ -45,6 +45,7 @@ public :
 		std::map<std::string, std::string>	_errorPages;
 		std::string							_maxBodySize;
 		std::list<ConfigLocation>			_locations;
+		std::list<ConfigLocation>           _regexLocations;
 
 		std::vector<std::string> getNames() const;
 		std::string getHost() const;
@@ -54,6 +55,7 @@ public :
 		std::map<std::string, std::string> getErrorPages() const;
 		uint64_t getMaxBodySize() const;
 		std::list<ConfigLocation> getLocations() const;
+		std::list<ConfigLocation> getRegexLocations() const;
 	}				ConfigServer;
 
 private :
@@ -72,6 +74,7 @@ private :
 	bool validateListen(const std::string& arg);
 	bool validateIp(const std::string& ip);
 	bool validateMaxBodySize(std::string size);
+	bool checkPortIdentity(uint16_t currPort);
 
 public :
 	explicit Config(const std::string& path);
@@ -89,6 +92,7 @@ public :
 	std::string getDefaultServerRoot() const;
 	std::vector<std::string> getDefaultServerIndexPages() const;
 	std::list<ConfigServer::ConfigLocation> getDefaultServerLocations() const;
+	std::list<ConfigServer::ConfigLocation> getDefaultServerRegexLocations() const;
 	Config::ConfigServer getServerById(size_t idx) const;
 	std::queue<ConfigServer> getServersQueue() const;
 };

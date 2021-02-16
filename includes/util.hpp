@@ -7,6 +7,7 @@
 #include <vector>
 #include <unistd.h>
 #include <fcntl.h>
+#include <stdexcept>
 
 #define BUFF_SIZE (1 << 19)
 

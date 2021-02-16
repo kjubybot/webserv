@@ -57,80 +57,83 @@ void Request::parse(std::string& line) {
         parseSecond(line);
 }
 
-void Request::parseFirst(std::string &line) {
-    size_t crlf = line.find("\r\n");
-    std::string l = line.substr(0, crlf);
-    std::vector<std::string> arr = split(l, " ");
-
-    if (arr.size() == 3)
-    {
-        if ((arr[0] != "GET") and (arr[0] != "POST") and (arr[0] != "PUT") and (arr[0] != "HEAD") and arr[2] != "HTTP/1.1") {
-            addError("400", "Bad Request");
-            return;
-        }
-        Request::setMethod(arr[0]);
-        Request::setPath(arr[1]);
-    } else {
-        addError("400", "Bad Request");
-        return;
-    }
-    line.erase(0, crlf + 2);
-    while (!line.empty()) {
-        crlf = line.find("\r\n");
-        l = line.substr(0, crlf);
-        if (l.empty()) {
-            line.erase(0, crlf + 2);
-            firstPart = true;
-            return;
-        }
-        size_t colon = l.find(":");
-        if (colon != std::string::npos) {
-            std::string headerName = l.substr(0, colon);
-            // check symbols >= 9 || <= 13
-            if (checkSymbols(headerName[0]) || checkSymbols(headerName[colon - 1])) {
-            //headerName[0] == ' ' || headerName[0] == '\t' || headerName[colon - 1] == ' ' || headerName[colon - 1] == '\t') {
-                addError("400", "Bad Request");
-                return;
-            }
-            std::transform(headerName.begin(), headerName.end(), headerName.begin(), ::tolower);
-            std::string headerValue = trim(l.substr(colon + 2));
-            // check transfer-encoding and content-length
-            if (headerName == "content-length") {
-                if (method == "GET" || headers.find("content-length") != headers.end()) {
-                    addError("400", "Bad Request");
-                    return;
-                }
-                contentLen = std::stoi(headerValue);
-            }
-            headers[headerName] = headerValue;
-        }
-        line.erase(0, crlf + 2);
-    }
-    if (headers.count("content-length") == 1 && headers.count("transfer-encoding") == 1) {
-        headers.erase("content-length");
-        contentLen = 0;
-    }
-    firstPart = true;
-}
-
-int Request::checkSymbols(char sym) {
-	return ((9 <= sym && sym <= 13) || sym == ' ');
-}
-
 bool Request::isFlagError() const {
 	return flagError;
 }
 
-// Private methods
+bool Request::isFirstPart() const {
+	return firstPart;
+}
+
+bool Request::isSecondPart() const {
+	return secondPart;
+}
+
+// Privates methods
+
+void Request::parseFirst(std::string &line) {
+	size_t crlf = line.find("\r\n");
+	std::string l = line.substr(0, crlf);
+	std::vector<std::string> arr = split(l, " ");
+
+	if (arr.size() == 3)
+	{
+		if ((arr[0] != "GET") and (arr[0] != "POST") and (arr[0] != "PUT") and (arr[0] != "HEAD") and arr[2] != "HTTP/1.1") {
+			addError("400", "Bad Request");
+			return;
+		}
+		Request::setMethod(arr[0]);
+		Request::setPath(arr[1]);
+	} else {
+		addError("400", "Bad Request");
+		return;
+	}
+	line.erase(0, crlf + 2);
+	while (!line.empty()) {
+		crlf = line.find("\r\n");
+		l = line.substr(0, crlf);
+		if (l.empty()) {
+			line.erase(0, crlf + 2);
+			firstPart = true;
+			return;
+		}
+		size_t colon = l.find(":");
+		if (colon != std::string::npos) {
+			std::string headerName = l.substr(0, colon);
+			if (checkSymbols(headerName[0]) || checkSymbols(headerName[colon - 1])) {
+				addError("400", "Bad Request");
+				return;
+			}
+			std::transform(headerName.begin(), headerName.end(), headerName.begin(), ::tolower);
+			std::string headerValue = trim(l.substr(colon + 2));
+			if (headerName == "content-length") {
+				if (method == "GET" || headers.find("content-length") != headers.end()) {
+					addError("400", "Bad Request");
+					return;
+				}
+				contentLen = std::stoi(headerValue);
+			}
+			headers[headerName] = headerValue;
+		}
+		line.erase(0, crlf + 2);
+	}
+	if (headers.count("content-length") == 1 && headers.count("transfer-encoding") == 1) {
+		headers.erase("content-length");
+		contentLen = 0;
+	}
+	firstPart = true;
+}
 
 void Request::parseSecond(std::string &line) {
-    if (headers.find("transfer-encoding") == headers.end() && contentLen == 0) {
+	it_te = headers.find("transfer-encoding");
+
+    if (it_te == headers.end() && contentLen == 0) {
         secondPart = true;
         return;
     }
     while (!line.empty()) {
         if (toRead == 0) {
-            if (headers.find("transfer-encoding") == headers.end())
+            if (it_te == headers.end())
                 toRead = contentLen;
             else {
                 size_t crlf = line.find("\r\n");
@@ -139,14 +142,12 @@ void Request::parseSecond(std::string &line) {
                     if (toRead == 0 && line.find("\r\n\r\n") == std::string::npos)
                         return;
                     line.erase(0, crlf + 2);
-//                    if (line.find("\r\n") == std::string::npos)
-//                        return;
                 } else
                     return;
             }
         }
         if (toRead == 0) {
-            if (headers.find("transfer-encoding") != headers.end())
+            if (it_te != headers.end())
                 line.erase(0, 2);
             secondPart = true;
             return;
@@ -156,12 +157,12 @@ void Request::parseSecond(std::string &line) {
             toRead -= line.length();
             line.clear();
         } else {
-            if (headers.find("transfer-encoding") != headers.end() && line.find("\r\n") == std::string::npos)
+            if (it_te != headers.end() && line.find("\r\n") == std::string::npos)
                 return;
             content += line.substr(0, toRead);
             line.erase(0, toRead);
             toRead = 0;
-            if (headers.find("transfer-encoding") == headers.end()) {
+			if (it_te == headers.end()) {
                 secondPart = true;
                 return;
             } else
@@ -176,10 +177,6 @@ void Request::addError(std::string errorKey, std::string errorValue) {
 	error.second = errorValue;
 }
 
-bool Request::isFirstPart() const {
-    return firstPart;
-}
-
-bool Request::isSecondPart() const {
-    return secondPart;
+int Request::checkSymbols(char sym) {
+	return ((9 <= sym && sym <= 13) || sym == ' ');
 }

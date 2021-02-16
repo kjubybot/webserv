@@ -2,7 +2,6 @@
 
 Response::Response() : complete(false) {}
 
-#include <iostream>
 Response::Response(const std::string& code) : code(code), complete(false) {
 //    std::cout << "Creating response with code " << code << std::endl;
     if (code[0] == '4' || code[0] == '5')
@@ -178,35 +177,35 @@ Response Response::fromCGI(const std::string& cgiResponse) {
     return ret;
 }
 
-//Response Response::fromCGIFD(int fd) {
-//    Response ret;
-//    std::string status, cgiResponse;
-//    size_t crlf;
-//    int r;
-//    char buf[IOSIZE];
-//
-//    while ((r = read(fd, buf, IOSIZE)))
-//        cgiResponse.append(buf, r);
-//    crlf = cgiResponse.find("\r\n");
-//    status = cgiResponse.substr(0, crlf);
-//    status = trim(status.substr(status.find(':') + 1));
-//    ret.code = status.substr(0, status.find(' '));
-//    ret.message = status.substr(status.find(' ') + 1);
-//    status = cgiResponse.substr(crlf + 2);
-//    while (!status.empty()) {
-//        std::string line, headerName, headerValue;
-//        crlf = status.find("\r\n");
-//        line = status.substr(0, crlf);
-//        if (line.empty()) {
-//            status.erase(0, crlf + 2);
-//            break;
-//        }
-//        headerName = line.substr(0, line.find(':'));
-//        headerValue = trim(line.substr(line.find(':') + 1));
-//        ret.headers[headerName] = headerValue;
-//        status.erase(0, crlf + 2);
-//    }
-//    ret.body = status;
-//    ret.headers["content-length"] = std::to_string(ret.body.length());
-//    return ret;
-//}
+Response Response::fromCGIFD(int fd) {
+    Response ret;
+    std::string status, cgiResponse;
+    size_t crlf;
+    int r;
+    char buf[IOSIZE];
+
+    while ((r = read(fd, buf, IOSIZE)))
+        cgiResponse.append(buf, r);
+    crlf = cgiResponse.find("\r\n");
+    status = cgiResponse.substr(0, crlf);
+    status = trim(status.substr(status.find(':') + 1));
+    ret.code = status.substr(0, status.find(' '));
+    ret.message = status.substr(status.find(' ') + 1);
+    status = cgiResponse.substr(crlf + 2);
+    while (!status.empty()) {
+        std::string line, headerName, headerValue;
+        crlf = status.find("\r\n");
+        line = status.substr(0, crlf);
+        if (line.empty()) {
+            status.erase(0, crlf + 2);
+            break;
+        }
+        headerName = line.substr(0, line.find(':'));
+        headerValue = trim(line.substr(line.find(':') + 1));
+        ret.headers[headerName] = headerValue;
+        status.erase(0, crlf + 2);
+    }
+    ret.body = status;
+    ret.headers["content-length"] = std::to_string(ret.body.length());
+    return ret;
+}
