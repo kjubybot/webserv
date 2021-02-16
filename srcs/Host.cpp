@@ -121,7 +121,6 @@ std::list<Config::ConfigServer::ConfigLocation>::iterator Host::matchLocation(co
             return it;
         ++it;
     }
-
 	std::list<conf_loc>::iterator jt = regLocations.begin();
     while (jt != regLocations.end()) {
     	std::regex regex(jt->getName(), std::regex_constants::ECMAScript);
@@ -129,7 +128,6 @@ std::list<Config::ConfigServer::ConfigLocation>::iterator Host::matchLocation(co
 	    	return (jt);
 	    jt++;
     }
-
 	return (--locations.end());
 }
 
@@ -151,7 +149,6 @@ Response Host::processRequest(const Request& r) {
     if ((locIt = matchLocation(r.getPath())) == locations.end()) {
         realRoot = root;
         uri = r.getPath();
-	    std::cout << "No matched location" << std::endl;
     } else {
         realRoot = locIt->_root;
 	    std::vector<std::string> regLocs;
@@ -178,7 +175,6 @@ Response Host::processRequest(const Request& r) {
         return ret;
     }
     fullPath = joinPath(realRoot, uri);
-
      if (r.getMethod() == "GET" || r.getMethod() == "HEAD") {
          if (stat(fullPath.c_str(), &fStat))
              return makeError("404", "Not Found", realRoot);
