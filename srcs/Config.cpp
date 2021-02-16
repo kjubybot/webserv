@@ -85,7 +85,7 @@ void Config::parseServerBlock(std::vector<std::string> lines, size_t* endBlockPo
 		throw std::runtime_error("error occurred in config: line " + std::to_string(*endBlockPos + 1));
 	}
 	else {
-		if (this->_servers.back()._host == "") {
+		if (this->_servers.back()._host == "" || !checkPortIdentity(this->_servers.back().getPort())) {
 			this->_servers.clear();
 			throw std::runtime_error("error occurred in config: line " + std::to_string(*endBlockPos + 1));
 		}
@@ -320,6 +320,18 @@ void Config::fillLocationsDefault()
 			it->_maxBodySize = this->_servers.back()._maxBodySize;
 		}
 	}
+	
+	it = this->_servers.back()._locations.begin();
+	std::vector<std::list<Config::ConfigServer::ConfigLocation>::iterator> regLocs;
+	for ( ; it != this->_servers.back()._locations.end(); it++) {
+		if (it->getName()[it->getName().length() - 1] == '$')
+			regLocs.push_back(it);
+	}
+
+	for (size_t i = 0; i < regLocs.size(); i++) {
+		this->_servers.back()._regexLocations.push_back(*(regLocs[i]));
+		this->_servers.back()._locations.erase(regLocs[i]);
+	}
 }
 
 bool Config::validateListen(const std::string& arg)
@@ -390,6 +402,17 @@ bool Config::validateMaxBodySize(std::string size)
 	return (false);
 }
 
+bool Config::checkPortIdentity(uint16_t currPort)
+{
+	if (this->_servers.size() == 1)
+		return (true);
+	for (std::vector<Config::ConfigServer>::iterator it = this->_servers.begin(); it != this->_servers.end() - 1; it++) {
+		if (it->getPort() == currPort)
+			return (false);
+	}
+	return (true);
+}
+
 Config::ConfigServer Config::getDefaultServer() const
 { return (this->_servers.front()); }
 
@@ -416,6 +439,9 @@ std::vector<std::string> Config::getDefaultServerIndexPages() const
 
 std::list<Config::ConfigServer::ConfigLocation> Config::getDefaultServerLocations() const
 { return (this->_servers.front()._locations); }
+
+std::list<Config::ConfigServer::ConfigLocation> Config::getDefaultServerRegexLocations() const
+{ return (this->_servers.front()._regexLocations); }
 
 Config::ConfigServer Config::getServerById(size_t idx) const
 { return (this->_servers.at(idx)); }
@@ -468,6 +494,9 @@ uint64_t Config::ConfigServer::getMaxBodySize() const
 
 std::list<Config::ConfigServer::ConfigLocation> Config::ConfigServer::getLocations() const
 { return (this->_locations); }
+
+std::list<Config::ConfigServer::ConfigLocation> Config::ConfigServer::getRegexLocations() const
+{ return (this->_regexLocations); }
 
 std::string Config::ConfigServer::ConfigLocation::getName() const
 { return (this->_name); }

@@ -8,6 +8,7 @@
 #include <map>
 #include <string>
 #include <sys/stat.h>
+#include <regex>
 #include "HttpErrorPage.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
@@ -24,7 +25,8 @@ class Host {
 	std::string 										root;
 	std::vector<std::string> 							index;
 	uint16_t											port;
-	std::list<conf_loc>	locations;
+	std::list<conf_loc>                                 locations;
+	std::list<conf_loc>                                 regLocations;
 
 	std::string makeAutoindex(const std::string& path) const;
 	Response makeError(const std::string& code, const std::string& message, const std::string& root);

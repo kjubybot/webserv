@@ -7,6 +7,7 @@
 #include <vector>
 #include <unistd.h>
 #include <fcntl.h>
+#include <stdexcept>
 
 #define BUFF_SIZE (1 << 19)
 
@@ -21,9 +22,9 @@ std::string skipWS(const std::string &str);
 uint64_t pow(int num, size_t pow);
 std::string joinPath(const std::string& a, const std::string& b);
 
-template <class T>
-bool isIn(std::vector<T>& vec, T val) {
-    for (typename std::vector<T>::iterator it = vec.begin(); it != vec.end(); ++it)
+template <class C>
+bool isIn(C& container, typename C::value_type val) {
+    for (typename C::iterator it = container.begin(); it != container.end(); ++it)
         if (val == *it)
             return true;
     return false;

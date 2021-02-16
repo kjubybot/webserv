@@ -16,13 +16,15 @@ Host::Host(const Config::ConfigServer& server)
 	port = server.getPort();
 	locations = server.getLocations();
 	locations.sort(Host::forSortingByLength);
+	regLocations = server.getRegexLocations();
 }
 
 Host::~Host()
 { }
 
 Host::Host(const Host& h)
-    : sockAddr(h.sockAddr), names(h.names), errorPages(h.errorPages), maxBodySize(h.maxBodySize), root(h.root), index(h.index), port(h.port), locations(h.locations)
+    :   sockAddr(h.sockAddr), names(h.names), errorPages(h.errorPages), maxBodySize(h.maxBodySize), root(h.root),
+        index(h.index),port(h.port), locations(h.locations), regLocations(h.regLocations)
 { }
 
 Host& Host::operator=(const Host& h) {
@@ -34,6 +36,7 @@ Host& Host::operator=(const Host& h) {
 	index = h.index;
 	port = h.port;
 	locations = h.locations;
+	regLocations = h.regLocations;
 	return (*this);
 }
 
@@ -104,16 +107,25 @@ uint16_t Host::getPort() const
 std::list<Config::ConfigServer::ConfigLocation>::iterator Host::matchLocation(const std::string& loc) {
     std::list<conf_loc>::iterator it = locations.begin();
     size_t slash;
+	std::list<conf_loc>::iterator defaultIt = (locations.back().getName() == "/") ? --locations.end() : locations.end();
 
-    if (locations.empty())
-        return locations.end();
-    while (it != locations.end()) {
+	if (locations.empty()) {
+	    return locations.end();
+    }
+    while (it != defaultIt) {
         slash = it->_name.rfind('/');
         if (it->_name.compare(0, slash > 0 ? slash : it->_name.length(), loc, 0, slash > 0 ? slash : it->_name.length()) == 0)
             return it;
         ++it;
     }
-    return --locations.end();
+	std::list<conf_loc>::iterator jt = regLocations.begin();
+    while (jt != regLocations.end()) {
+    	std::regex regex(jt->getName(), std::regex_constants::ECMAScript);
+	    if (std::regex_match(loc, regex))
+	    	return (jt);
+	    jt++;
+    }
+	return (--locations.end());
 }
 
 bool Host::matchExtension(const std::string& ext, conf_loc& loc) {
@@ -136,8 +148,13 @@ Response Host::processRequest(const Request& r) {
         uri = r.getPath();
     } else {
         realRoot = locIt->_root;
-        if (r.getPath().length() > 0)
+	    std::list<std::string> regLocs;
+	    for (std::list<conf_loc>::iterator itt = regLocations.begin(); itt != regLocations.end(); itt++)
+		    regLocs.push_back(itt->getName());
+        if (r.getPath().length() > 0 && !isIn(regLocs, locIt->getName()))
             uri = r.getPath().substr(locIt->_name.rfind('/'));
+        else if (isIn(regLocs, locIt->getName()))
+	        uri = r.getPath().substr(r.getPath().find('/') + 1);
         else
             uri = r.getPath();
     }
@@ -155,7 +172,6 @@ Response Host::processRequest(const Request& r) {
         return ret;
     }
     fullPath = joinPath(realRoot, uri);
-
      if (r.getMethod() == "GET" || r.getMethod() == "HEAD") {
          if (stat(fullPath.c_str(), &fStat))
              return makeError("404", "Not Found", realRoot);
