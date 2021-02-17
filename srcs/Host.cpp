@@ -14,6 +14,7 @@ Host::Host(const Config::ConfigServer& server)
 	root = server.getRoot();
 	index = server.getIndexPages();
 	port = server.getPort();
+	auth = server.getAuth();
 	locations = server.getLocations();
 	locations.sort(Host::forSortingByLength);
 	regLocations = server.getRegexLocations();
@@ -24,7 +25,7 @@ Host::~Host()
 
 Host::Host(const Host& h)
     :   sockAddr(h.sockAddr), names(h.names), errorPages(h.errorPages), maxBodySize(h.maxBodySize), root(h.root),
-        index(h.index),port(h.port), locations(h.locations), regLocations(h.regLocations)
+        index(h.index), port(h.port), auth(h.auth), locations(h.locations), regLocations(h.regLocations)
 { }
 
 Host& Host::operator=(const Host& h) {
@@ -35,6 +36,7 @@ Host& Host::operator=(const Host& h) {
 	root = h.root;
 	index = h.index;
 	port = h.port;
+	auth = h.auth;
 	locations = h.locations;
 	regLocations = h.regLocations;
 	return (*this);
@@ -138,6 +140,21 @@ bool Host::matchExtension(const std::string& ext, conf_loc& loc) {
     return false;
 }
 
+bool Host::isAuthorized(const Request& request)
+{
+	if (!request.getHeaders().count("authorization") || this->auth.empty())
+		return (true);
+	std::vector<std::string> authVec = split(request.getHeaders().at("authorization"), " ");
+	if (authVec[0] == "Basic") {
+		for (std::vector<std::string>::iterator it = this->auth.begin(); it != this->auth.end(); it++) {
+			if (decodeBase64(authVec[1]) == *it)
+				return (true);
+		}
+		return (false);
+	}
+	return (true);
+}
+
 Response Host::processRequest(const Request& r) {
     Response ret;
     std::string fullPath, realRoot, uri, indexPath;
@@ -146,25 +163,34 @@ Response Host::processRequest(const Request& r) {
     std::list<conf_loc>::iterator locIt;
     std::vector<std::string> indexes;
 
-    if ((locIt = matchLocation(r.getPath())) == locations.end()) {
-        realRoot = root;
-        uri = r.getPath();
-    } else {
-        realRoot = locIt->_root;
-	    std::vector<std::string> regLocs;
-	    for (std::list<conf_loc>::iterator itt = regLocations.begin(); itt != regLocations.end(); itt++)
-		    regLocs.push_back(itt->getName());
-        if (r.getPath().length() > 0 && !isIn(regLocs, locIt->getName()))
-            uri = r.getPath().substr(locIt->_name.rfind('/'));
-        else if (isIn(regLocs, locIt->getName()))
-	        uri = r.getPath().substr(r.getPath().find('/'));
-        else
-            uri = r.getPath();
-    }
-    std::cout << "Matching: " << locIt->getName() << std::endl;
-    if (r.isFlagError())
-        return makeError(r.getError().first, r.getError().second, realRoot);
-    if (locIt != locations.end() && !isIn(locIt->_allowedMethods, r.getMethod())) {
+	if ((locIt = matchLocation(r.getPath())) == locations.end()) {
+		realRoot = root;
+		uri = r.getPath();
+	} else {
+		locIt = matchLocation(r.getPath());
+		realRoot = locIt->_root;
+		std::vector<std::string> regLocs;
+		for (std::list<conf_loc>::iterator itt = regLocations.begin(); itt != regLocations.end(); itt++)
+			regLocs.push_back(itt->getName());
+		if (isIn(regLocs, locIt->getName())) {
+			if (r.getPath().find('/') != std::string::npos)
+				uri = r.getPath().substr(r.getPath().find('/'));
+			else
+				uri = r.getPath();
+		}
+		else {
+			if (r.getPath().length() > 0)
+				uri = r.getPath().substr(locIt->_name.rfind('/'));
+			else
+				uri = r.getPath();
+		}
+	}
+    if (r.isFlagError()) {
+		return makeError(r.getError().first, r.getError().second, realRoot);
+	}
+	if (!isAuthorized(r))
+		return makeError("401", "Unauthorized", realRoot);
+	if (locIt != locations.end() && !isIn(locIt->_allowedMethods, r.getMethod())) {
         ret = makeError("405", "Method Not Allowed", realRoot);
         std::string allow;
         for (size_t i = 0; i < locIt->_allowedMethods.size(); ++i) {
@@ -230,22 +256,20 @@ Response Host::processRequest(const Request& r) {
          return ret;
      }
 	 else if (r.getMethod() == "POST") {
+	 	std::cout << fullPath << std::endl;
 	     size_t dot = uri.rfind('.');
 		 if (dot != std::string::npos && matchExtension(uri.substr(dot), *locIt)) {
-//			 CGI cgi("cgi_tester", fullPath, r);
-//			 std::string resp = cgi.processCGI(*this);
-//			 return Response::fromCGI(resp);
 			 CGI cgi(locIt->getCGIPath(), fullPath, r);
 			 try {
 				 std::string resp = cgi.processCGI(*this);
 				 return Response::fromCGI(resp);
 			 }
 			 catch (const std::exception& ex) {
-				 std::cerr << ex.what() << std::endl;
 				 return Response::fromStringNoBody("500", "Internal Error", "");
 			 }
 		 }
 		 return Response::fromStringNoBody("200", "OK", "");
-	 } else
+	 }
+	 else
 		 return makeError("501", "Not Implemented", realRoot);
 }

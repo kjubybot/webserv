@@ -101,6 +101,7 @@ void Config::parseServerBlockDirectives(std::vector<std::string> line, size_t en
 	serverBlockDirectives.push_back("server_name"); serverBlockDirectives.push_back("listen");
 	serverBlockDirectives.push_back("error_page"); serverBlockDirectives.push_back("max_body_size");
 	serverBlockDirectives.push_back("root"); serverBlockDirectives.push_back("index");
+	serverBlockDirectives.push_back("usr");
 	bool isValidDirective = false;
 
 	for(std::vector<std::string>::iterator it = serverBlockDirectives.begin(); it != serverBlockDirectives.end(); it++) {
@@ -158,9 +159,18 @@ void Config::parseServerBlockDirectives(std::vector<std::string> line, size_t en
 				throw std::runtime_error("error occurred in config: line " + std::to_string(endBlockPos + 1));
 			}
 		}
-		else {
+		else if (line[0] == "index") {
 			if (this->_servers.back()._index.empty())
 				this->_servers.back()._index.insert(this->_servers.back()._index.begin(), ++line.begin(), line.end());
+			else {
+				this->_servers.clear();
+				throw std::runtime_error("error occurred in config: line " + std::to_string(endBlockPos + 1));
+			}
+		}
+		else {
+			if (line.size() == 2) {
+				this->_servers.back()._auth.push_back(line[1]);
+			}
 			else {
 				this->_servers.clear();
 				throw std::runtime_error("error occurred in config: line " + std::to_string(endBlockPos + 1));
@@ -437,6 +447,9 @@ std::string Config::getDefaultServerRoot() const
 std::vector<std::string> Config::getDefaultServerIndexPages() const
 { return (this->_servers.front()._index); }
 
+std::vector<std::string> Config::getDefaultServerAuth() const
+{ return (this->_servers.front()._auth); }
+
 std::list<Config::ConfigServer::ConfigLocation> Config::getDefaultServerLocations() const
 { return (this->_servers.front()._locations); }
 
@@ -491,6 +504,9 @@ uint64_t Config::ConfigServer::getMaxBodySize() const
 	else
 		return (0);
 }
+
+std::vector<std::string> Config::ConfigServer::getAuth() const
+{ return (this->_auth); }
 
 std::list<Config::ConfigServer::ConfigLocation> Config::ConfigServer::getLocations() const
 { return (this->_locations); }

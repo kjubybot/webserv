@@ -25,6 +25,7 @@ class Host {
 	std::string 										root;
 	std::vector<std::string> 							index;
 	uint16_t											port;
+	std::vector<std::string>							auth;
 	std::list<conf_loc>                                 locations;
 	std::list<conf_loc>                                 regLocations;
 
@@ -32,6 +33,7 @@ class Host {
 	Response makeError(const std::string& code, const std::string& message, const std::string& root);
 	std::list<conf_loc>::iterator matchLocation(const std::string& loc);
 	bool matchExtension(const std::string& ext, conf_loc& loc);
+	bool isAuthorized(const Request& request);
 
     static bool forSortingByLength(const conf_loc& a, const conf_loc& b);
 public:
