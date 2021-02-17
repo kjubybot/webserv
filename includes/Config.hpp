@@ -45,7 +45,7 @@ public :
 		std::map<std::string, std::string>	_errorPages;
 		std::string							_maxBodySize;
 		std::list<ConfigLocation>			_locations;
-		std::list<ConfigLocation>           _regexLocations;
+		std::list<ConfigLocation>            _regexLocations;
 
 		std::vector<std::string> getNames() const;
 		std::string getHost() const;

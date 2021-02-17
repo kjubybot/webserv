@@ -110,17 +110,17 @@ uint16_t Host::getPort() const
 std::list<Config::ConfigServer::ConfigLocation>::iterator Host::matchLocation(const std::string& loc) {
     std::list<conf_loc>::iterator it = locations.begin();
     size_t slash;
-	std::list<conf_loc>::iterator defaultIt = (locations.back().getName() == "/") ? --locations.end() : locations.end();
-
 	if (locations.empty()) {
 	    return locations.end();
     }
-    while (it != defaultIt) {
+    while (it != --locations.end()) {
         slash = it->_name.rfind('/');
         if (it->_name.compare(0, slash > 0 ? slash : it->_name.length(), loc, 0, slash > 0 ? slash : it->_name.length()) == 0)
             return it;
         ++it;
     }
+    if (loc == "/" && (--locations.end())->getName() == "/")
+		return (--locations.end());
 	std::list<conf_loc>::iterator jt = regLocations.begin();
     while (jt != regLocations.end()) {
     	std::regex regex(jt->getName(), std::regex_constants::ECMAScript);
@@ -157,10 +157,11 @@ Response Host::processRequest(const Request& r) {
         if (r.getPath().length() > 0 && !isIn(regLocs, locIt->getName()))
             uri = r.getPath().substr(locIt->_name.rfind('/'));
         else if (isIn(regLocs, locIt->getName()))
-	        uri = r.getPath().substr(r.getPath().find('/') + 1);
+	        uri = r.getPath().substr(r.getPath().find('/'));
         else
             uri = r.getPath();
     }
+    std::cout << "Matching: " << locIt->getName() << std::endl;
     if (r.isFlagError())
         return makeError(r.getError().first, r.getError().second, realRoot);
     if (locIt != locations.end() && !isIn(locIt->_allowedMethods, r.getMethod())) {
@@ -231,25 +232,20 @@ Response Host::processRequest(const Request& r) {
 	 else if (r.getMethod() == "POST") {
 	     size_t dot = uri.rfind('.');
 		 if (dot != std::string::npos && matchExtension(uri.substr(dot), *locIt)) {
-			 CGI cgi("cgi_tester", fullPath, r);
-			 std::string resp = cgi.processCGI(*this);
-			 return Response::fromCGI(resp);
+//			 CGI cgi("cgi_tester", fullPath, r);
+//			 std::string resp = cgi.processCGI(*this);
+//			 return Response::fromCGI(resp);
+			 CGI cgi(locIt->getCGIPath(), fullPath, r);
+			 try {
+				 std::string resp = cgi.processCGI(*this);
+				 return Response::fromCGI(resp);
+			 }
+			 catch (const std::exception& ex) {
+				 std::cerr << ex.what() << std::endl;
+				 return Response::fromStringNoBody("500", "Internal Error", "");
+			 }
 		 }
 		 return Response::fromStringNoBody("200", "OK", "");
-		 /*
-		if (uri.rfind('.') != std::string::npos) {
-			CGI cgi(locIt->getCGIPath(), fullPath, r);
-			try {
-				std::string resp = cgi.processCGI(*this);
-				return Response::fromCGI(resp);
-			}
-			catch (const std::exception& ex) {
-				std::cerr << ex.what() << std::endl;
-			}
-			return Response::fromStringNoBody("500", "Internal Error", "");
-		}
-		else
-			return Response::fromStringNoBody("200", "OK", "");*/
 	 } else
 		 return makeError("501", "Not Implemented", realRoot);
 }
