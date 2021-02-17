@@ -44,7 +44,7 @@ HttpErrorPage::HttpErrorPage(const std::string& code, const std::string& descrip
 					 \t<div class=\"errorDescription\">Error description: %&&&%</div>\n\
 					 \t<div class=\"plainText\">webserv</div>\n\
 					 </body>\n\
-					 </html>";
+					 </html>\n";
 	this->_content.replace(this->_content.find("%@@@%"),
 		std::string("%@@@%").size(), this->_code + " error");
 	this->_content.replace(this->_content.find("%***%"),

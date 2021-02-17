@@ -3,13 +3,12 @@
 
 #include <iostream>
 #include <string>
-#include <stdexcept>
 #include <map>
+#include <stdexcept>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <sys/stat.h>
 #include "Request.hpp"
 #include "util.hpp"
 
@@ -28,7 +27,6 @@ private :
 	void executeCGI(const Host& host);
 	char** formArgs() const;
 	char** formEnvs(const Host& host) const;
-	std::string decodeBase64(const std::string& input) const;
 
 public :
 	explicit CGI(const std::string& path, const std::string& source, const Request& request);

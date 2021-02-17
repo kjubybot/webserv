@@ -36,7 +36,8 @@ std::string trim(const std::string& s) {
     return s.substr(pos, len);
 }
 
-std::vector<std::string> split(const std::string& str, const std::string& delimeter) {
+std::vector<std::string> split(const std::string& str, const std::string& delimeter)
+{
     std::vector<std::string> items;
     size_t prev = 0, pos = str.find(delimeter, prev);
 
@@ -178,4 +179,47 @@ std::string to_string(unsigned val) {
         val /= 10;
     }
     return ret.substr(pos);
+}
+
+std::string encodeBase64(const std::string& input)
+{
+	char base64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	std::string result;
+	int val = 0, valb = -6;
+
+	for (size_t i = 0; i < input.size(); i++) {
+		val = (val << 8) + input[i];
+		valb += 8;
+		while (valb >= 0) {
+			result.push_back(base64[(val >> valb) & 0x3f]);
+			valb -= 6;
+		}
+	}
+	if (valb > -6)
+		result.push_back(base64[((val << 8) >> (valb + 8)) & 0x3f]);
+	while (result.size() % 4)
+		result.push_back('=');
+	return (result);
+}
+
+std::string decodeBase64(const std::string& input)
+{
+	char base64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	std::string result;
+	std::vector<int> base(256,-1);
+	for (int i = 0; i < 64; i++)
+		base[base64[i]] = i;
+
+	int val = 0, valb = -8;
+	for (size_t i = 0; i < input.size(); i++) {
+		if (base[input[i]] == -1)
+			break;
+		val = (val << 6) + base[input[i]];
+		valb += 6;
+		if (valb >= 0) {
+			result.push_back(char((val >> valb) & 0xff));
+			valb -= 8;
+		}
+	}
+	return (result);
 }
