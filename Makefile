@@ -1,33 +1,52 @@
 NAME = webserv
-SRC = $(addprefix srcs/,\
-	main.cpp\
-	Server.cpp\
-	Host.cpp\
-	Connection.cpp\
-	Request.cpp\
-	Response.cpp\
-	HttpErrorPage.cpp\
-	HttpErrorException.cpp\
-	CGI.cpp\
-	Config.cpp\
-	util.cpp)
 
-OBJ = $(SRC:.cpp=.o)
+OBJDIR = objs/
+SRCDIR = srcs/
+
+OBJ =\
+	main.o\
+	Server.o\
+	Host.o\
+	Connection.o\
+	Request.o\
+	Response.o\
+	HttpErrorPage.o\
+	HttpErrorException.o\
+	CGI.o\
+	Config.o\
+	util.o
+OBJ := $(addprefix $(OBJDIR),$(OBJ))
+
+NB = $(words $(OBJ))
+INDEX = 0
 
 CXX = clang++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -Iincludes/
+CXXFLAGS = -MMD -Wall -Wextra -Werror -std=c++98 -Iincludes/
 
-all: $(NAME)
+all: $(OBJDIR) $(NAME)
 
 $(NAME): $(OBJ)
-	$(CXX) $(CXXFLAGS) -o $(NAME) $(OBJ)
+	@$(CXX) $(CXXFLAGS) -o $(NAME) $(OBJ)
+	@printf "\r\e[38;5;46mDONE\e[0m\e[K\n"
+
+$(OBJDIR)%.o: $(SRCDIR)%.cpp
+	@$(CXX) $(CXXFLAGS) -c -o $@ $<
+	@$(eval PERCENT=$(shell echo $$(($(INDEX)*100/$(NB)))))
+	@printf "\r\e[38;5;226mMAKE %2d%%\e[0m %s\e[K" $(PERCENT) $@
+	@$(eval INDEX=$(shell echo $$(($(INDEX)+1))))
+
+$(OBJDIR):
+	@mkdir -p $(OBJDIR)
 
 clean:
-	$(RM) $(OBJ)
+	@$(RM) -r $(OBJDIR)
+	@printf "\e[38;5;124mCLEAN\e[0m\e[K\n"
 
 fclean: clean
-	$(RM) $(NAME)
+	@$(RM) $(NAME)
+	@printf "\e[38;5;160mFCLEAN\e[0m\e[K\n"
 
 re: fclean all
 
+-include $(OBJ:.o=.d)
 .PHONY: all clean fclean re
