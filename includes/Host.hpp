@@ -18,6 +18,7 @@ class CGI;
 
 class Host {
     typedef Config::ConfigServer::ConfigLocation conf_loc;
+
     struct sockaddr_in									sockAddr;
     std::vector<std::string>							names;
 	std::map<std::string, std::string>					errorPages;
@@ -44,7 +45,6 @@ public:
 
     struct sockaddr_in getSockAddr() const;
     std::string getName() const;
-    const std::map<std::string, std::string>& getErrorPages() const;
 	uint64_t getMaxBodySize(const Request& request);
 	const std::string& getRoot() const;
 	const std::vector<std::string>& getIndexPages() const;

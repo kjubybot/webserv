@@ -27,9 +27,9 @@ std::string to_string(unsigned val);
 std::string encodeBase64(const std::string& input);
 std::string decodeBase64(const std::string& input);
 
-template <class T>
-bool isIn(std::vector<T>& vec, T val) {
-    for (typename std::vector<T>::iterator it = vec.begin(); it != vec.end(); ++it)
+template <class C>
+bool isIn(C& container, typename C::value_type val) {
+    for (typename C::iterator it = container.begin(); it != container.end(); ++it)
         if (val == *it)
             return true;
     return false;

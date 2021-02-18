@@ -12,10 +12,6 @@ int Connection::getSocket() const {
     return sock;
 }
 
-struct sockaddr_in Connection::getSockAddr() const {
-    return sockAddr;
-}
-
 void Connection::readData() {
     char buf[IOSIZE];
     int r = read(sock, buf, IOSIZE);
@@ -83,6 +79,8 @@ void Connection::checkHeaders(Request& request) {
 
     if (host.getMaxBodySize(request) != 0 && host.getMaxBodySize(request) < request.getContentLen())
         request.addError("413", "Request Entity Too Large");
+    if (request.hasHeader("connection") && request.getHeader("connection") == "close")
+        _isOpen = false;
 }
 
 void Connection::routeRequests() {

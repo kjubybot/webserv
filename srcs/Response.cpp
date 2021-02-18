@@ -6,6 +6,7 @@ Response::Response(const std::string& code) : code(code), complete(false) {
 //    std::cout << "Creating response with code " << code << std::endl;
     if (code[0] == '4' || code[0] == '5')
         headers["Connection"] = "close";
+    headers["Content-Language"] = "en";
 }
 
 Response::Response(const Response& r) : code(r.code), message(r.message), body(r.body), headers(r.headers), complete(true) {}
@@ -84,18 +85,6 @@ std::string Response::getData() {
 
 bool Response::isComplete() const {
     return complete;
-}
-
-void Response::setCode(const std::string& code) {
-    this->code = code;
-}
-
-void Response::setMessage(const std::string& message) {
-    this->message = message;
-}
-
-void Response::setBody(const std::string& body) {
-    this->body = body;
 }
 
 void Response::setHeader(const std::string& key, const std::string& value) {

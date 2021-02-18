@@ -84,13 +84,8 @@ struct sockaddr_in Host::getSockAddr() const {
 }
 
 std::string Host::getName() const {
-	if (names.empty())
-		return ("");
     return names.front();
 }
-
-const std::map<std::string, std::string>& Host::getErrorPages() const
-{ return (errorPages); }
 
 uint64_t Host::getMaxBodySize(const Request& request) {
     std::list<conf_loc>::iterator it = matchLocation(request.getPath());
@@ -223,9 +218,9 @@ Response Host::processRequest(const Request& r) {
                  return makeError("404", "Not Found", realRoot);
              } else if ((locIt != locations.end() && locIt->getAutoIndex())) {
                  if (r.getMethod() == "GET")
-                     return Response::fromString("200", "OK", makeAutoindex(realRoot));
+                     return Response::fromString("200", "OK", makeAutoindex(fullPath));
                  else
-                     return Response::fromStringNoBody("200", "OK", makeAutoindex(realRoot));
+                     return Response::fromStringNoBody("200", "OK", makeAutoindex(fullPath));
              } else
                  return makeError("403", "Forbidden", realRoot);
          } else {
@@ -246,7 +241,7 @@ Response Host::processRequest(const Request& r) {
              write(fd, r.getContent().data(), r.getContent().length());
              close(fd);
              ret = Response::fromStringNoBody("201", "Created", "");
-             ret.setHeader("Location", "http://" + joinPath(names.front(), joinPath(locIt->_uploadPath, r.getPath())));
+             ret.setHeader("Content-Location", "http://" + joinPath(names.front(), joinPath(locIt->_uploadPath, r.getPath())));
          } else {
              fd = open(fullPath.c_str(), O_WRONLY | O_TRUNC);
              write(fd, r.getContent().data(), r.getContent().length());
@@ -256,7 +251,6 @@ Response Host::processRequest(const Request& r) {
          return ret;
      }
 	 else if (r.getMethod() == "POST") {
-	 	std::cout << fullPath << std::endl;
 	     size_t dot = uri.rfind('.');
 		 if (dot != std::string::npos && matchExtension(uri.substr(dot), *locIt)) {
 			 CGI cgi(locIt->getCGIPath(), fullPath, r);
