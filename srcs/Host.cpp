@@ -42,6 +42,68 @@ Host& Host::operator=(const Host& h) {
 	return (*this);
 }
 
+Response Host::makeError(const std::string& code, const std::string& message, const std::string& curr_root) {
+	Response ret;
+	struct stat fStat;
+
+	if (errorPages.find(code) != errorPages.end() && stat(joinPath(curr_root, errorPages[code]).c_str(), &fStat) == 0)
+		ret = Response::fromFile(code, message, joinPath(curr_root, errorPages[code]));
+	else
+		ret = Response::fromString(code, message, HttpErrorPage(code, message).createPage());
+	return ret;
+}
+
+bool Host::forSortingByLength(const conf_loc& a, const conf_loc& b) {
+	return a._name.length() > b._name.length();
+}
+
+struct sockaddr_in Host::getSockAddr() const {
+	return sockAddr;
+}
+
+std::string Host::getName() const {
+	return names.front();
+}
+
+uint64_t Host::getMaxBodySize(const Request& request) {
+	std::list<conf_loc>::iterator it = matchLocation(request.getPath());
+	if (it != locations.end())
+		return it->getMaxBodySize();
+	else
+		return maxBodySize;
+}
+
+const std::string& Host::getRoot() const
+{ return (root); }
+
+uint16_t Host::getPort() const
+{ return (port); }
+
+const std::vector<std::string>& Host::getIndexPages() const
+{ return (index); }
+
+bool Host::matchExtension(const std::string& ext, conf_loc& loc) {
+	for (std::vector<std::string>::iterator it = loc._cgiExtensions.begin(); it != loc._cgiExtensions.end(); ++it)
+		if (ext == *it)
+			return true;
+	return false;
+}
+
+bool Host::isAuthorized(const Request& request)
+{
+	if (!request.getHeaders().count("authorization") || this->auth.empty())
+		return (true);
+	std::vector<std::string> authVec = split(request.getHeaders().at("authorization"), " ");
+	if (authVec[0] == "Basic") {
+		for (std::vector<std::string>::iterator it = this->auth.begin(); it != this->auth.end(); it++) {
+			if (decodeBase64(authVec[1]) == *it)
+				return (true);
+		}
+		return (false);
+	}
+	return (true);
+}
+
 std::string Host::makeAutoindex(const std::string& path) const {
     std::string ret = "<!DOCTYPE HTML>"
                       "<html><head><title>Index of " + path
@@ -56,53 +118,13 @@ std::string Host::makeAutoindex(const std::string& path) const {
         fName = std::string(dp->d_name);
         if (dp->d_type & DT_DIR)
             fName += "/";
-        ret +="<a href=\"" + fName;
+        ret +="<a href=\"" + path + fName;
         ret += "\">" + fName + "</a><br>";
     }
     ret += "</pre></body></html>";
     closedir(dir);
     return ret;
 }
-
-Response Host::makeError(const std::string& code, const std::string& message, const std::string& curr_root) {
-    Response ret;
-    struct stat fStat;
-
-    if (errorPages.find(code) != errorPages.end() && stat(joinPath(curr_root, errorPages[code]).c_str(), &fStat) == 0)
-        ret = Response::fromFile(code, message, joinPath(curr_root, errorPages[code]));
-    else
-        ret = Response::fromString(code, message, HttpErrorPage(code, message).createPage());
-    return ret;
-}
-
-bool Host::forSortingByLength(const conf_loc& a, const conf_loc& b) {
-    return a._name.length() > b._name.length();
-}
-
-struct sockaddr_in Host::getSockAddr() const {
-	return sockAddr;
-}
-
-std::string Host::getName() const {
-    return names.front();
-}
-
-uint64_t Host::getMaxBodySize(const Request& request) {
-    std::list<conf_loc>::iterator it = matchLocation(request.getPath());
-    if (it != locations.end())
-        return it->getMaxBodySize();
-    else
-        return maxBodySize;
-}
-
-const std::string& Host::getRoot() const
-{ return (root); }
-
-const std::vector<std::string>& Host::getIndexPages() const
-{ return (index); }
-
-uint16_t Host::getPort() const
-{ return (port); }
 
 std::list<Config::ConfigServer::ConfigLocation>::iterator Host::matchLocation(const std::string& loc) {
     std::list<conf_loc>::iterator it = locations.begin();
@@ -128,28 +150,6 @@ std::list<Config::ConfigServer::ConfigLocation>::iterator Host::matchLocation(co
 	return (--locations.end());
 }
 
-bool Host::matchExtension(const std::string& ext, conf_loc& loc) {
-    for (std::vector<std::string>::iterator it = loc._cgiExtensions.begin(); it != loc._cgiExtensions.end(); ++it)
-        if (ext == *it)
-            return true;
-    return false;
-}
-
-bool Host::isAuthorized(const Request& request)
-{
-	if (!request.getHeaders().count("authorization") || this->auth.empty())
-		return (true);
-	std::vector<std::string> authVec = split(request.getHeaders().at("authorization"), " ");
-	if (authVec[0] == "Basic") {
-		for (std::vector<std::string>::iterator it = this->auth.begin(); it != this->auth.end(); it++) {
-			if (decodeBase64(authVec[1]) == *it)
-				return (true);
-		}
-		return (false);
-	}
-	return (true);
-}
-
 Response Host::processRequest(const Request& r) {
     Response ret;
     std::string fullPath, realRoot, uri, indexPath;
@@ -162,13 +162,12 @@ Response Host::processRequest(const Request& r) {
 		realRoot = root;
 		uri = r.getPath();
 	} else {
-		locIt = matchLocation(r.getPath());
 		realRoot = locIt->_root;
 		std::vector<std::string> regLocs;
 		for (std::list<conf_loc>::iterator itt = regLocations.begin(); itt != regLocations.end(); itt++)
 			regLocs.push_back(itt->getName());
 		if (isIn(regLocs, locIt->getName())) {
-			if (r.getPath().find('/') != std::string::npos)
+			if (r.getPath().find('/') != std::string::npos && r.getPath().front() == '/')
 				uri = r.getPath().substr(r.getPath().find('/'));
 			else
 				uri = r.getPath();
@@ -180,9 +179,8 @@ Response Host::processRequest(const Request& r) {
 				uri = r.getPath();
 		}
 	}
-    if (r.isFlagError()) {
+    if (r.isFlagError())
 		return makeError(r.getError().first, r.getError().second, realRoot);
-	}
 	if (!isAuthorized(r))
 		return makeError("401", "Unauthorized", realRoot);
 	if (locIt != locations.end() && !isIn(locIt->_allowedMethods, r.getMethod())) {
@@ -206,8 +204,8 @@ Response Host::processRequest(const Request& r) {
              else
                  indexes = index;
              if (!indexes.empty()) {
-                 for (size_t i = 0; i < index.size(); ++i) {
-                     indexPath = joinPath(fullPath, index[i]);
+                 for (size_t i = 0; i < indexes.size(); ++i) {
+                     indexPath = joinPath(fullPath, indexes[i]);
                      if (stat(indexPath.c_str(), &fStat) == 0) {
                          if (r.getMethod() == "GET")
                              return Response::fromFile("200", "OK", indexPath);
