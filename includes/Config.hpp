@@ -73,10 +73,10 @@ private :
 	void parseLocationBlock(std::vector<std::string> lines, size_t* endBlockPos);
 	void parseLocationBlockDirectives(std::vector<std::string> line, size_t endBlockPos);
 	void fillLocationsDefault();
+	void fillServerNames();
 	bool validateListen(const std::string& arg);
 	bool validateIp(const std::string& ip);
 	bool validateMaxBodySize(std::string size);
-	bool checkPortIdentity(uint16_t currPort);
 
 public :
 	explicit Config(const std::string& path);

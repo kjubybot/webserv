@@ -85,13 +85,14 @@ void Config::parseServerBlock(std::vector<std::string> lines, size_t* endBlockPo
 		throw std::runtime_error("error occurred in config: line " + std::to_string(*endBlockPos + 1));
 	}
 	else {
-		if (this->_servers.back()._host == "" || !checkPortIdentity(this->_servers.back().getPort())) {
+		if (this->_servers.back()._host == "") {
 			this->_servers.clear();
 			throw std::runtime_error("error occurred in config: line " + std::to_string(*endBlockPos + 1));
 		}
 		if (this->_servers.back()._root == "")
 			this->_servers.back()._root = ".";
 		fillLocationsDefault();
+		fillServerNames();
 	}
 }
 
@@ -344,6 +345,29 @@ void Config::fillLocationsDefault()
 	}
 }
 
+void Config::fillServerNames()
+{
+	if (this->_servers.back().getNames().empty())
+		this->_servers.back()._names.push_back(this->_servers.back()._host);
+
+	for (std::vector<std::string>::iterator it = this->_servers.back()._names.begin();
+		it != this->_servers.back()._names.end(); it++)
+		*it += ":" + std::to_string(this->_servers.back().getPort());
+
+	std::vector<std::string> names = this->_servers.back()._names;
+	std::vector<ConfigServer> servs = this->_servers;
+	if (servs.size() == 1)
+		return ;
+	for (std::vector<ConfigServer>::iterator it = servs.begin(); it != --servs.end(); it++) {
+		for (std::vector<std::string>::iterator jt = names.begin(); jt != names.end(); jt++) {
+			if (isIn(it->_names, *jt)) {
+				this->_servers.clear();
+				throw std::runtime_error("error occurred in config: host + port is not unique");
+			}
+		}
+	}
+}
+
 bool Config::validateListen(const std::string& arg)
 {
 	if (arg.find(':') == std::string::npos || arg.find_first_of(':') != arg.find_last_of(':'))
@@ -410,17 +434,6 @@ bool Config::validateMaxBodySize(std::string size)
 	if (exponent.size() == 0 || (exponent.size() == 1 && (exponent == "K" || exponent == "M" || exponent == "G")))
 		return (true);
 	return (false);
-}
-
-bool Config::checkPortIdentity(uint16_t currPort)
-{
-	if (this->_servers.size() == 1)
-		return (true);
-	for (std::vector<Config::ConfigServer>::iterator it = this->_servers.begin(); it != this->_servers.end() - 1; it++) {
-		if (it->getPort() == currPort)
-			return (false);
-	}
-	return (true);
 }
 
 Config::ConfigServer Config::getDefaultServer() const
