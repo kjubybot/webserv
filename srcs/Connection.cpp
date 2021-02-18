@@ -80,6 +80,8 @@ void Connection::checkHeaders(Request& request) {
 
     if (host.getMaxBodySize(request) != 0 && host.getMaxBodySize(request) < request.getContentLen())
         request.addError("413", "Request Entity Too Large");
+    if (request.hasHeader("connection") && request.getHeader("connection") == "close")
+        _isOpen = false;
 }
 
 void Connection::routeRequests() {
