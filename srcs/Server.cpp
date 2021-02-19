@@ -109,8 +109,7 @@ void Server::startServer() {
             FD_SET(*it, &rfds);
         std::list<Connection*>::iterator it = connections.begin();
         while (it != connections.end()) {
-            if ((*it)->resReady())
-                FD_SET((*it)->getSocket(), &wfds);
+            FD_SET((*it)->getSocket(), &wfds);
             if ((*it)->isOpen()) {
                 FD_SET((*it)->getSocket(), &rfds);
             } else if (!(*it)->resReady()){
