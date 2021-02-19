@@ -167,8 +167,8 @@ Response Host::processRequest(const Request& r) {
 		for (std::list<conf_loc>::iterator itt = regLocations.begin(); itt != regLocations.end(); itt++)
 			regLocs.push_back(itt->getName());
 		if (isIn(regLocs, locIt->getName())) {
-			if (r.getPath().find('/') != std::string::npos && r.getPath().front() == '/')
-				uri = r.getPath().substr(r.getPath().find('/'));
+			if (r.getPath().substr(0, realRoot.length()) == realRoot)
+				uri = r.getPath().substr(realRoot.length());
 			else
 				uri = r.getPath();
 		}
