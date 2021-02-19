@@ -35,6 +35,7 @@ class Host {
 	std::list<conf_loc>::iterator matchLocation(const std::string& loc);
 	bool matchExtension(const std::string& ext, conf_loc& loc);
 	bool isAuthorized(const Request& request);
+	std::string matchRegexUri(std::string path, std::string root);
 
     static bool forSortingByLength(const conf_loc& a, const conf_loc& b);
 public:

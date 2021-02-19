@@ -118,7 +118,7 @@ std::string Host::makeAutoindex(const std::string& path) const {
         fName = std::string(dp->d_name);
         if (dp->d_type & DT_DIR)
             fName += "/";
-        ret +="<a href=\"" + path + fName;
+        ret +="<a href=\"" + fName;
         ret += "\">" + fName + "</a><br>";
     }
     ret += "</pre></body></html>";
@@ -150,6 +150,29 @@ std::list<Config::ConfigServer::ConfigLocation>::iterator Host::matchLocation(co
 	return (--locations.end());
 }
 
+std::string Host::matchRegexUri(std::string path, std::string locRoot)
+{
+	std::vector<std::string> locs = split(locRoot, "/");
+	std::vector<std::string> splitPath = split(path, "/");
+
+	for (size_t i = 0; i < locs.size(); i++) {
+		std::string currRoot;
+		for (size_t j = i; j < locs.size(); j++) {
+			if (j == i)
+				currRoot = locs[j];
+			else
+				currRoot += "/" + locs[j];
+			if (path.find(currRoot) == 0)
+				return (matchRegexUri(path.erase(0, currRoot.size()),
+				locRoot.erase(0, currRoot.size())));
+			if (path.find("/" + currRoot) == 0)
+				return (matchRegexUri(path.erase(0, currRoot.size() + 1),
+				locRoot.erase(0, currRoot.size() + 1)));
+		}
+	}
+	return (path);
+}
+
 Response Host::processRequest(const Request& r) {
     Response ret;
     std::string fullPath, realRoot, uri, indexPath;
@@ -167,8 +190,8 @@ Response Host::processRequest(const Request& r) {
 		for (std::list<conf_loc>::iterator itt = regLocations.begin(); itt != regLocations.end(); itt++)
 			regLocs.push_back(itt->getName());
 		if (isIn(regLocs, locIt->getName())) {
-			if (r.getPath().substr(0, realRoot.length()) == realRoot)
-				uri = r.getPath().substr(realRoot.length());
+			if (r.getPath().length() > 0)
+				uri = matchRegexUri(r.getPath(), realRoot);
 			else
 				uri = r.getPath();
 		}
