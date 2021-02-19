@@ -1,9 +1,8 @@
 #include "Connection.hpp"
 
 Connection::Connection(int sock, struct sockaddr_in sockAddr, std::list<Host> hosts)
-        : sock(sock), sockAddr(sockAddr), _isOpen(true), hosts(hosts) {
-//    std::cout << "Connection from " << iptoa(sockAddr.sin_addr.s_addr) << std::endl;
-}
+        : sock(sock), sockAddr(sockAddr), _isOpen(true), hosts(hosts)
+{ }
 
 Connection::~Connection() {
     close(sock);
@@ -80,6 +79,8 @@ void Connection::checkHeaders(Request& request) {
 
     if (host.getMaxBodySize(request) != 0 && host.getMaxBodySize(request) < request.getContentLen())
         request.addError("413", "Request Entity Too Large");
+    if (request.hasHeader("connection") && request.getHeader("connection") == "close")
+        _isOpen = false;
 }
 
 void Connection::routeRequests() {

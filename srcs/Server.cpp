@@ -109,8 +109,7 @@ void Server::startServer() {
             FD_SET(*it, &rfds);
         std::list<Connection*>::iterator it = connections.begin();
         while (it != connections.end()) {
-            if ((*it)->resReady())
-                FD_SET((*it)->getSocket(), &wfds);
+            FD_SET((*it)->getSocket(), &wfds);
             if ((*it)->isOpen()) {
                 FD_SET((*it)->getSocket(), &rfds);
             } else if (!(*it)->resReady()){
@@ -123,7 +122,7 @@ void Server::startServer() {
             for (std::list<int>::iterator it = sockets.begin(); it != sockets.end(); ++it) {
                 if (FD_ISSET(*it, &rfds)) {
                     int newSock = accept(*it, (struct sockaddr *) &sockAddr, &sockLen);
-//                    fcntl(newSock, F_SETFL, O_NONBLOCK);
+                    fcntl(newSock, F_SETFL, O_NONBLOCK);
                     if (newSock < 0)
                         std::cerr << "Unable too create connection: " << strerror(errno) << std::endl;
                     else {

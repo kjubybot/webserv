@@ -13,13 +13,16 @@ CGI::CGI(const CGI& cgi)
 
 std::string CGI::processCGI(const Host& host)
 {
+	std::string result;
 	try {
 		executeCGI(host);
+		result = getFileContent("./cgi_response");
 	}
 	catch (const std::exception& ex) {
 		std::cerr << "CGI exception: " << ex.what() << std::endl;
+		throw std::runtime_error("cgi fails");
 	}
-	return (getFileContent("./cgi_response"));
+	return (result);
 }
 
 void CGI::executeCGI(const Host& host)
@@ -146,28 +149,6 @@ char** CGI::formEnvs(const Host& host) const
 	envs[i] = NULL;
 
 	return (envs);
-}
-
-std::string CGI::decodeBase64(const std::string& input) const
-{
-	char base64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-	std::string result;
-	std::vector<int> base(256,-1);
-	for (int i = 0; i < 64; i++)
-		base[base64[i]] = i;
-
-	int val = 0, valb = -8;
-	for (size_t i = 0; i < input.size(); i++) {
-		if (base[input[i]] == -1)
-			break;
-		val = (val << 6) + base[input[i]];
-		valb += 6;
-		if (valb >= 0) {
-			result.push_back(char((val >> valb) & 0xff));
-			valb -= 8;
-		}
-	}
-	return (result);
 }
 
 const std::string& CGI::getPath() const

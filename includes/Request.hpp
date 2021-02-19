@@ -7,7 +7,6 @@
 #include <map>
 #include <vector>
 #include <string>
-#include "HttpErrorException.hpp"
 #include "util.hpp"
 
 class Request {
@@ -43,12 +42,14 @@ public:
     const std::string &getContent() const;
     std::pair<std::string, std::string> getError() const;
     const std::map<std::string, std::string> &getHeaders() const;
+    const std::string &getHeader(const std::string& headerName);
 
     void parse(std::string& line);
 
     bool isFirstPart() const;
     bool isFlagError() const;
     bool isSecondPart() const;
+    bool hasHeader(const std::string& headerName) const;
 
     void addError(std::string errorKey, std::string errorValue);
 

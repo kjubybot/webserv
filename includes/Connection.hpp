@@ -10,7 +10,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include "Connection.hpp"
-#include "HttpErrorException.hpp"
 #include "HttpErrorPage.hpp"
 #include "Host.hpp"
 #include "Request.hpp"

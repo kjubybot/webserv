@@ -7,6 +7,7 @@
 #include <vector>
 #include <unistd.h>
 #include <fcntl.h>
+#include <stdexcept>
 
 #define BUFF_SIZE (1 << 19)
 
@@ -20,10 +21,15 @@ void freeMatrix(char** matrix);
 std::string skipWS(const std::string &str);
 uint64_t pow(int num, size_t pow);
 std::string joinPath(const std::string& a, const std::string& b);
+unsigned long stoul(const std::string& str, int base = 10);
+std::string to_string(int val);
+std::string to_string(unsigned val);
+std::string encodeBase64(const std::string& input);
+std::string decodeBase64(const std::string& input);
 
-template <class T>
-bool isIn(std::vector<T>& vec, T val) {
-    for (typename std::vector<T>::iterator it = vec.begin(); it != vec.end(); ++it)
+template <class C>
+bool isIn(C& container, typename C::value_type val) {
+    for (typename C::iterator it = container.begin(); it != container.end(); ++it)
         if (val == *it)
             return true;
     return false;
