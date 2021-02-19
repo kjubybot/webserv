@@ -11,7 +11,6 @@ OBJ =\
 	Request.o\
 	Response.o\
 	HttpErrorPage.o\
-	HttpErrorException.o\
 	CGI.o\
 	Config.o\
 	util.o

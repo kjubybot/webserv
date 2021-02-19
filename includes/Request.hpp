@@ -7,7 +7,6 @@
 #include <map>
 #include <vector>
 #include <string>
-#include "HttpErrorException.hpp"
 #include "util.hpp"
 
 class Request {
